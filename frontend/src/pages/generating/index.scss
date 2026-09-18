@@ -1,0 +1,136 @@
+.generating {
+  .gen-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .gen-title {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+  }
+  .topic-chip {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    background: #f1ede3;
+    border-radius: var(--r-chip);
+    padding: 7px 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .gen-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 2px 10px;
+  }
+  .gen-stage .bubble {
+    flex: 1;
+  }
+  .em {
+    color: var(--orange);
+  }
+
+  .gen-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 14px 15px;
+  }
+  .gen-card .pbar-label {
+    margin-bottom: 6px;
+  }
+  .gen-card .pbar {
+    margin-bottom: 4px;
+  }
+
+  .q-list {
+    margin-top: 11px;
+  }
+  .q-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    padding: 8px 2px;
+    border-top: 1px solid var(--line-soft);
+    color: #6b665c;
+  }
+  .q-item:first-child {
+    border-top: none;
+  }
+  .q-no {
+    flex: none;
+    width: 22px;
+    text-align: center;
+    font-weight: 800;
+  }
+  .q-text {
+    flex: 1;
+  }
+  .q-item.done {
+    color: var(--green-dark);
+    font-weight: 600;
+  }
+  .q-item.ing {
+    color: var(--orange-dark);
+    font-weight: 700;
+  }
+  .q-item.wait {
+    color: var(--ink-faint);
+  }
+  .dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .dots .d {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: bounce 1s infinite;
+  }
+  .dots .d:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+  .dots .d:nth-child(3) {
+    animation-delay: 0.36s;
+  }
+
+  .gen-tip {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--yellow-deep);
+    background: var(--yellow-soft);
+    border-radius: 10px;
+    padding: 8px 12px;
+    line-height: 1.5;
+  }
+  .fail-tip {
+    font-size: 13px;
+    color: var(--red-dark);
+    background: var(--red-soft);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .ready-btn {
+    margin-top: 14px;
+  }
+  .skip-link.center {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--blue);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+}

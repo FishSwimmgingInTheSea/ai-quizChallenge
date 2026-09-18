@@ -5,3 +5,22 @@ Thumbs.db
 node_modules/
 .env
 .env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+htmlcov/
+.coverage
+
+# Taro / 小程序
+frontend/dist/
+frontend/.temp/
+frontend/.swc/
+frontend/.rn_temp/

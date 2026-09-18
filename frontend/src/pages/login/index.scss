@@ -1,0 +1,71 @@
+.s1 {
+  .s1-scr {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 20px);
+  }
+  .hero {
+    text-align: center;
+    padding: 24px 0 6px;
+  }
+  .hero-logo {
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: 1px;
+  }
+  .hero-logo .em,
+  .bubble .em {
+    color: var(--orange);
+  }
+  .hero-slogan {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .mascot-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 4px 8px;
+  }
+  .mascot-stage .bubble {
+    flex: 1;
+  }
+  .sell-list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sell-item {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a453d;
+  }
+  .login-zone {
+    margin-top: auto;
+    padding-top: 22px;
+    padding-bottom: 24px;
+    text-align: center;
+  }
+  .skip-link {
+    display: block;
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--blue);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .protocol {
+    display: block;
+    margin-top: 10px;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+  }
+}

@@ -1,0 +1,327 @@
+/* ============================================================
+   智趣 AI 闯关学习小程序 · 全局设计系统（对齐 prototypes/01-design-system v1.2）
+   轻度手绘 ·「作业本上的爆笑课堂」
+   ============================================================ */
+page {
+  /* 纸面与墨色 */
+  --canvas: #F4F1EB;
+  --paper: #FBF9F5;
+  --card: #FFFFFF;
+  --ink: #2E2A26;
+  --ink-soft: #8A8478;
+  --ink-faint: #B5AFA3;
+  --line: #E7E2D7;
+  --line-soft: #F0EBDD;
+  /* 品牌与语义色 */
+  --orange: #FF7548;
+  --orange-dark: #EA5A24;
+  --orange-soft: #FFF2EB;
+  --green: #28A461;
+  --green-dark: #1B7A43;
+  --green-soft: #E9F7EF;
+  --red: #E63946;
+  --red-dark: #C42F3B;
+  --red-soft: #FDF0EE;
+  --yellow: #F5B841;
+  --yellow-soft: #FDF6E3;
+  --yellow-deep: #8A6D00;
+  --blue: #2B6CB0;
+  --blue-soft: #EEF4FA;
+  --wx-green: #07C160;
+  --wx-dark: #059A4E;
+  /* 圆角 */
+  --r-card: 16px;
+  --r-btn: 14px;
+  --r-chip: 999px;
+  --shadow-card: 0 1px 2px rgba(62, 52, 40, .04), 0 6px 18px rgba(62, 52, 40, .06);
+  --shadow-pop: 0 2px 6px rgba(62, 52, 40, .07);
+
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+}
+
+view,
+text,
+button,
+textarea,
+input {
+  box-sizing: border-box;
+}
+
+/* ---------- 页面根：纸面底 + 顶部安全区 ---------- */
+.page {
+  min-height: 100vh;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.safe-top {
+  height: env(safe-area-inset-top);
+  min-height: 20px;
+  background: var(--paper);
+}
+
+.scr {
+  flex: 1;
+  padding: 12px 18px 24px;
+}
+
+/* ---------- 按钮：按压感只留给实底主按钮 ---------- */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: .5px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--r-btn);
+  color: #fff;
+  background: var(--orange);
+  box-shadow: 0 4px 0 var(--orange-dark);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  line-height: 1.2;
+}
+.btn::after { border: none; }
+.btn.hover { transform: translateY(4px); box-shadow: 0 0 0 var(--orange-dark); filter: brightness(.97); }
+.btn.btn-green { background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
+.btn.btn-red { background: var(--red); box-shadow: 0 4px 0 var(--red-dark); }
+.btn.btn-wx { background: var(--wx-green); box-shadow: 0 4px 0 var(--wx-dark); font-size: 16px; }
+.btn.btn-soft { background: var(--orange-soft); color: var(--orange-dark); box-shadow: 0 3px 0 rgba(234, 90, 36, .16); }
+.btn.btn-ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow-pop); }
+.btn.btn-disabled { background: #F0EDE5; color: #AEA899; box-shadow: none; }
+.btn-block { width: 100%; }
+
+/* ---------- 选项胶囊：四态 ---------- */
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-chip);
+  background: #fff;
+  padding: 11px 13px;
+  margin-bottom: 10px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.opt .key {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  background: #F4F1E9;
+  color: var(--ink-soft);
+}
+.opt .txt { font-size: 13.5px; line-height: 1.45; font-weight: 500; color: #4A453D; flex: 1; }
+.opt .mark { margin-left: auto; flex: none; font-size: 16px; font-weight: 800; }
+.opt.selected { border-color: var(--orange); background: var(--orange-soft); }
+.opt.selected .key { background: var(--orange); color: #fff; }
+.opt.correct { border-color: var(--green); background: var(--green-soft); }
+.opt.correct .key { background: var(--green); color: #fff; }
+.opt.correct .mark { color: var(--green); }
+.opt.wrong { border-color: var(--red); background: var(--red-soft); animation: shake .4s ease; }
+.opt.wrong .key { background: var(--red); color: #fff; }
+.opt.wrong .mark { color: var(--red); }
+.opt.dim { opacity: .5; }
+
+/* ---------- 作业本输入卡（全站唯一手绘签名） ---------- */
+.paper-card {
+  position: relative;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 30px, #F0EBDC 30px 31px),
+    #FEFDF9;
+  border: 1px solid #E3DDCE;
+  border-radius: 14px 18px 13px 17px;
+  padding: 16px 16px 12px 42px;
+  box-shadow: var(--shadow-card);
+}
+.paper-card::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 29px;
+  width: 2px;
+  background: var(--red);
+  opacity: .3;
+}
+.paper-card .paper-input {
+  width: 100%;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 30px;
+  min-height: 90px;
+  background: transparent;
+}
+.paper-card .ph { font-size: 14px; color: #B5AFA3; line-height: 30px; }
+.char-count { text-align: right; font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
+
+/* ---------- 进度条 ---------- */
+.pbar-label { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.pbar { height: 12px; border-radius: var(--r-chip); background: #ECE7DB; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: var(--r-chip); background: var(--orange); }
+.pbar.xp .pbar-fill { background: #F3C95C; }
+.pbar.green .pbar-fill { background: #57A87E; }
+
+/* ---------- 题目分段指示器 ---------- */
+.q-dots { display: flex; gap: 6px; align-items: center; margin: 12px 0 4px; }
+.q-dots .dot { flex: 1; height: 8px; border-radius: 99px; background: #ECE7DB; }
+.q-dots .dot.ok { background: #57A87E; }
+.q-dots .dot.bad { background: var(--red); opacity: .75; }
+.q-dots .dot.cur { background: var(--orange); height: 10px; }
+
+/* ---------- 徽章 ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: var(--r-chip);
+  background: #F1EDE3;
+  color: #6B665C;
+  white-space: nowrap;
+}
+.badge.b-single { background: var(--blue-soft); color: var(--blue); }
+.badge.b-multi { background: var(--orange-soft); color: var(--orange-dark); }
+.badge.b-judge { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-point { background: var(--green-soft); color: var(--green-dark); }
+.badge.b-xp { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-streak { background: var(--red-soft); color: var(--red); }
+.diff-stars { font-size: 13px; letter-spacing: 2px; color: #C98F00; font-weight: 700; }
+.diff-stars .off { opacity: .25; }
+
+/* ---------- 讲解反馈卡 ---------- */
+.explain-card { border: 2px solid; border-radius: 14px; padding: 13px 15px; }
+.explain-card.ok { border-color: var(--green); background: var(--green-soft); }
+.explain-card.bad { border-color: var(--red); background: var(--red-soft); }
+.explain-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.explain-card .head .icon { font-size: 17px; }
+.explain-card .head .h-title { font-size: 14.5px; font-weight: 700; }
+.explain-card.ok .head .h-title { color: var(--green-dark); }
+.explain-card.bad .head .h-title { color: var(--red-dark); }
+.explain-card .head .badge { margin-left: auto; }
+.explain-card .body { font-size: 13px; line-height: 1.72; color: #4A453D; }
+.explain-card .fold { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green); display: inline-flex; align-items: center; gap: 4px; }
+.explain-card.bad .fold { color: var(--red); }
+
+/* ---------- 对话气泡 ---------- */
+.bubble {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px 14px 14px 14px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4A453D;
+  line-height: 1.6;
+}
+.bubble::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 13px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+.bubble .em { color: var(--orange); }
+
+/* ---------- 题干卡 ---------- */
+.stem-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 15px 16px 13px;
+  margin-bottom: 13px;
+  position: relative;
+}
+.stem-card .stem-no {
+  position: absolute;
+  top: -11px;
+  right: 12px;
+  background: #F1EDE3;
+  color: #6B665C;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--r-chip);
+  letter-spacing: 1px;
+}
+.stem-card .stem-text { font-size: 14px; line-height: 1.7; font-weight: 600; color: #33302B; }
+
+/* ---------- 反馈抽屉 ---------- */
+.fb-sheet {
+  margin-top: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 14px 14px;
+  box-shadow: var(--shadow-card);
+  padding: 14px 14px 15px;
+  position: relative;
+  animation: slideUp .25s ease-out;
+}
+.fb-sheet::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  border-radius: 99px;
+  background: #E3DDCE;
+}
+.fb-head { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.fb-title { flex: 1; }
+.fb-title .t-main { font-weight: 800; font-size: 20px; letter-spacing: .5px; display: block; }
+.fb-title.ok .t-main { color: var(--green-dark); }
+.fb-title.bad .t-main { color: var(--red-dark); }
+.fb-title .t-sub { font-size: 11.5px; color: var(--ink-soft); font-weight: 600; display: block; margin: 3px 0 4px; }
+.reward-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.reward-row .badge { animation: pop .4s ease backwards; }
+.fb-body { margin-top: 11px; }
+
+/* ---------- 顶部导航（自绘） ---------- */
+.top-nav { display: flex; align-items: center; gap: 10px; }
+.top-nav .title { flex: 1; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .5px; }
+.x-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.x-btn::after { border: none; }
+
+/* ---------- 动效 ---------- */
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+@keyframes flame { 0%, 100% { transform: rotate(-4deg) scale(1); } 50% { transform: rotate(4deg) scale(1.06); } }
+@keyframes pop { 0% { transform: scale(.3); opacity: 0; } 65% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(26px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+.floaty { animation: floaty 3s ease-in-out infinite; }
