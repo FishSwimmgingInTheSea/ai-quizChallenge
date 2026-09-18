@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智趣 AI 闯关 · 设计规范 v1.2（现代版）</title>
+<style>
+/* ============================================================
+   智趣 AI 闯关学习小程序 · 设计规范 v1.2（现代版）
+   风格基调：轻度手绘 ·「作业本上的爆笑课堂」
+   v1.1 修订：墨线做减法 —— 静态元素去描边、发丝线分层、
+   一屏一处用力、语义色只在反馈时刻出现
+   v1.2 修订：移除装饰字体（层级改由字重承担）、
+   提亮按钮色板、导航图标换单色线性 SVG
+   ============================================================ */
+:root {
+  /* 纸面与墨色 */
+  --canvas: #F4F1EB;        /* 画布：纯色暖灰米白（无纹理） */
+  --paper: #FBF9F5;         /* 手机屏纸面 */
+  --card: #FFFFFF;
+  --ink: #2E2A26;           /* 墨色（柔和近黑） */
+  --ink-soft: #8A8478;
+  --ink-faint: #B5AFA3;
+  --line: #E7E2D7;          /* 发丝线：静态内容分层 */
+  --line-soft: #F0EBDD;
+  /* 品牌与语义色 */
+  --orange: #FF7548;        /* 品牌橙：主品牌 / 唯一强调色（v1.2 提亮） */
+  --orange-dark: #EA5A24;
+  --orange-soft: #FFF2EB;
+  --green: #28A461;         /* 活力绿：正确 / 继续推进 / 讲解（反馈时刻） */
+  --green-dark: #1B7A43;
+  --green-soft: #E9F7EF;
+  --red: #E63946;           /* 红笔红：错误 / 订正（仅反馈时刻） */
+  --red-dark: #C42F3B;
+  --red-soft: #FDF0EE;
+  --yellow: #F5B841;        /* 荧光黄：XP / 奖励时刻 */
+  --yellow-soft: #FDF6E3;
+  --yellow-deep: #8A6D00;
+  --blue: #2B6CB0;          /* 蓝墨水：单选题 / 链接 */
+  --blue-soft: #EEF4FA;
+  --wx-green: #07C160;
+  --wx-dark: #059A4E;
+  /* 圆角与阴影 */
+  --r-card: 16px;
+  --r-btn: 14px;
+  --r-chip: 999px;
+  --shadow-card: 0 1px 2px rgba(62,52,40,.04), 0 6px 18px rgba(62,52,40,.06);
+  --shadow-pop: 0 2px 6px rgba(62,52,40,.07);
+  /* 字体 */
+  --font-body: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--canvas);   /* 纯色画布，长时间浏览不疲惫 */
+  padding: 36px 24px 64px;
+}
+
+/* ---------- 文档页头 ---------- */
+.doc-header {
+  max-width: 1240px; margin: 0 auto 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  padding: 28px 32px;
+}
+.doc-header h1 {
+  font-weight: 800;
+  font-size: 30px; letter-spacing: 1px;
+}
+.doc-header h1 em { font-style: normal; color: var(--orange); }
+.doc-header .sub { margin-top: 8px; font-size: 14.5px; color: var(--ink-soft); }
+.doc-tags { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.doc-tags span {
+  font-size: 12.5px; font-weight: 600; padding: 4px 12px;
+  border-radius: var(--r-chip);
+}
+.doc-tags span.t-orange { background: var(--orange-soft); color: var(--orange-dark); }
+.doc-tags span.t-green { background: var(--green-soft); color: var(--green-dark); }
+.doc-tags span.t-yellow { background: var(--yellow-soft); color: var(--yellow-deep); }
+
+/* ---------- 区块 ---------- */
+main { max-width: 1240px; margin: 0 auto; }
+.sec { margin-top: 34px; }
+.sec-title {
+  font-weight: 700;
+  font-size: 22px; letter-spacing: .5px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.sec-title .no { font-size: 14px; color: var(--orange); letter-spacing: 2px; }
+.sec-desc { margin: 8px 0 16px; font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); max-width: 860px; }
+.sec-rule { border: none; border-top: 1px solid var(--line); margin: 32px 0 0; }
+
+/* 网格：一行三列，响应式降列 */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1080px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+/* 演示卡片：白卡 + 发丝线，无描边无投影（静态内容安静） */
+.demo-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 18px 20px;
+}
+.demo-card .cap {
+  font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+  letter-spacing: 1px; margin-bottom: 14px;
+}
+
+/* ---------- 色板 ---------- */
+.swatch { border: 1px solid var(--line); border-radius: 14px; background: #fff; overflow: hidden; }
+.swatch-block { height: 76px; border-bottom: 1px solid var(--line); }
+.swatch-info { padding: 11px 13px 13px; }
+.swatch-info b { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.swatch-info b code {
+  font-family: Consolas, monospace; font-size: 11.5px; font-weight: 400;
+  background: #F4F1EA; padding: 2px 7px; border-radius: 6px; color: var(--ink-soft);
+}
+.swatch-info span { display: block; margin-top: 5px; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+
+/* ---------- 字体 ---------- */
+.type-sample { padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.type-sample:last-child { border-bottom: none; }
+.type-sample .label { font-size: 11.5px; color: var(--ink-faint); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.type-title { font-weight: 800; font-size: 36px; letter-spacing: 1px; }
+.type-title em { font-style: normal; color: var(--orange); }
+.type-body { font-size: 15px; line-height: 1.8; color: #4A453D; }
+.type-ladder { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; margin-top: 10px; }
+.type-ladder span { background: var(--paper); border: 1px solid var(--line-soft); border-radius: 10px; padding: 6px 12px; }
+.t32 { font-weight: 800; font-size: 32px; }
+.t24 { font-weight: 700; font-size: 24px; }
+.t18 { font-weight: 700; font-size: 18px; }
+.t16 { font-size: 16px; }
+.t14 { font-size: 14px; color: var(--ink-soft); }
+.t12 { font-size: 12px; color: var(--ink-soft); }
+
+/* ---------- 按钮：按压感只留给实底主按钮 ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; font-size: 17px; letter-spacing: .5px;
+  padding: 12px 24px; cursor: pointer; user-select: none;
+  border: none; border-radius: var(--r-btn);
+  color: #fff; background: var(--orange);
+  box-shadow: 0 4px 0 var(--orange-dark);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--orange-dark); filter: brightness(.97); }
+.btn.btn-green { background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
+.btn.btn-green:active { box-shadow: 0 0 0 var(--green-dark); }
+.btn.btn-red { background: var(--red); box-shadow: 0 4px 0 var(--red-dark); }
+.btn.btn-red:active { box-shadow: 0 0 0 var(--red-dark); }
+.btn.btn-wx { background: var(--wx-green); box-shadow: 0 4px 0 var(--wx-dark); font-size: 16px; }
+.btn.btn-wx:active { box-shadow: 0 0 0 var(--wx-dark); }
+.btn.btn-soft { background: var(--orange-soft); color: var(--orange-dark); box-shadow: 0 3px 0 rgba(234,90,36,.16); }
+.btn.btn-soft:active { box-shadow: 0 0 0 rgba(234,90,36,.16); }
+.btn.btn-ghost { background: #fff; color: var(--ink); border: 1.5px solid var(--line); box-shadow: var(--shadow-pop); }
+.btn.btn-ghost:active { transform: translateY(1px); box-shadow: none; }
+.btn.btn-disabled { background: #F0EDE5; color: #AEA899; box-shadow: none; cursor: not-allowed; }
+.btn-block { display: flex; width: 100%; }
+.btn-row { display: flex; flex-direction: column; gap: 14px; }
+.btn-note { font-size: 12px; color: var(--ink-soft); margin-top: 12px; line-height: 1.6; background: var(--paper); border-radius: 10px; padding: 8px 12px; }
+
+/* ---------- 选项胶囊：四态（描边只出现在交互与判题时刻） ---------- */
+.opt {
+  display: flex; align-items: center; gap: 11px;
+  border: 1.5px solid var(--line); border-radius: var(--r-chip);
+  background: #fff; padding: 11px 13px; margin-bottom: 10px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.opt:last-child { margin-bottom: 0; }
+.opt .key {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 13px;
+  background: #F4F1E9; color: var(--ink-soft);
+}
+.opt .txt { font-size: 13.5px; line-height: 1.45; font-weight: 500; color: #4A453D; }
+.opt .mark { margin-left: auto; flex: none; font-size: 16px; font-weight: 800; }
+/* 选中态（提交前） */
+.opt.selected { border-color: var(--orange); background: var(--orange-soft); }
+.opt.selected .key { background: var(--orange); color: #fff; }
+/* 答对态 */
+.opt.correct { border-color: var(--green); background: var(--green-soft); }
+.opt.correct .key { background: var(--green); color: #fff; }
+.opt.correct .mark { color: var(--green); }
+/* 答错态 */
+.opt.wrong { border-color: var(--red); background: var(--red-soft); animation: shake .4s ease; }
+.opt.wrong .key { background: var(--red); color: #fff; }
+.opt.wrong .mark { color: var(--red); }
+
+/* ---------- 作业本输入卡（全站唯一保留的「手绘签名」） ---------- */
+.paper-card {
+  position: relative;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 30px, #F0EBDC 30px 31px),
+    #FEFDF9;
+  border: 1.5px solid #E3DDCE;
+  border-radius: 14px 18px 13px 17px;   /* 微抖动圆角：手绘签名 */
+  padding: 16px 16px 12px 42px;
+  box-shadow: var(--shadow-card);
+}
+.paper-card::before {
+  content: ''; position: absolute; top: 10px; bottom: 10px; left: 29px;
+  width: 2px; background: var(--red); opacity: .3;
+}
+.paper-card .ph {
+  font-size: 14px; color: #B5AFA3; line-height: 30px; min-height: 60px;
+}
+.paper-card .ph b { color: var(--ink); font-weight: 600; }
+.char-count { text-align: right; font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
+
+/* ---------- 进度条：细、平、无装饰 ---------- */
+.pbar-wrap { margin-bottom: 8px; }
+.pbar-label { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.pbar {
+  height: 12px; border-radius: var(--r-chip);
+  background: #ECE7DB; overflow: hidden;
+}
+.pbar-fill { height: 100%; border-radius: var(--r-chip); background: var(--orange); }
+.pbar.xp .pbar-fill { background: #F3C95C; }
+.pbar.green .pbar-fill { background: #57A87E; }
+
+/* ---------- 题目分段指示器（答题页进度，代替上/下题按钮） ---------- */
+.q-dots { display: flex; gap: 6px; align-items: center; margin: 12px 0 4px; }
+.q-dots i { flex: 1; height: 8px; border-radius: 99px; background: #ECE7DB; }
+.q-dots i.ok { background: #57A87E; }
+.q-dots i.bad { background: var(--red); opacity: .75; }
+.q-dots i.cur { background: var(--orange); height: 10px; }
+
+/* ---------- 徽章：无描边浅底 chip ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; padding: 4px 11px;
+  border-radius: var(--r-chip);
+  background: #F1EDE3; color: #6B665C;
+}
+.badge.b-single { background: var(--blue-soft); color: var(--blue); }
+.badge.b-multi { background: var(--orange-soft); color: var(--orange-dark); }
+.badge.b-judge { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-point { background: var(--green-soft); color: var(--green-dark); }
+.badge.b-xp { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-streak { background: var(--red-soft); color: var(--red); }
+.diff-stars { font-size: 13px; letter-spacing: 2px; color: #C98F00; font-weight: 700; }
+.diff-stars .off { opacity: .25; }
+
+/* ---------- 讲解反馈卡（反馈时刻：允许 2px 语义描边） ---------- */
+.explain-card {
+  border: 2px solid; border-radius: 14px;
+  padding: 13px 15px;
+}
+.explain-card.ok { border-color: var(--green); background: var(--green-soft); }
+.explain-card.bad { border-color: var(--red); background: var(--red-soft); }
+.explain-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.explain-card .head .icon { font-size: 17px; }
+.explain-card .head b { font-size: 14.5px; }
+.explain-card.ok .head b { color: var(--green-dark); }
+.explain-card.bad .head b { color: var(--red-dark); }
+.explain-card .head .badge { margin-left: auto; }
+.explain-card .body { font-size: 13px; line-height: 1.72; color: #4A453D; }
+.explain-card .fold { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green); display: inline-flex; align-items: center; gap: 4px; }
+.explain-card.bad .fold { color: var(--red); }
+
+/* ---------- 对话气泡 ---------- */
+.bubble-row { display: flex; align-items: flex-start; gap: 14px; }
+.bubble {
+  position: relative; background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 4px 14px 14px 14px;
+  padding: 10px 14px; font-size: 13.5px; font-weight: 600; color: #4A453D;
+  max-width: 320px;
+}
+.bubble::before {
+  content: ''; position: absolute; left: -9px; top: 13px;
+  width: 12px; height: 12px; background: #fff;
+  border-left: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line);
+  transform: rotate(45deg);
+}
+.bubble em { font-style: normal; color: var(--orange); }
+
+/* ---------- 小智表情包 ---------- */
+.mascot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+@media (max-width: 1080px) { .mascot-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .mascot-grid { grid-template-columns: repeat(2, 1fr); } }
+.mascot-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 13px 12px 12px; text-align: center;
+}
+.mascot-card svg { width: 100%; max-width: 120px; height: auto; }
+.mascot-card b { display: block; font-weight: 700; font-size: 16px; margin-top: 8px; letter-spacing: .5px; }
+.mascot-card small { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
+.mascot-card .use { margin-top: 8px; font-size: 11px; color: var(--green-dark); font-weight: 700; background: var(--green-soft); border-radius: var(--r-chip); padding: 3px 10px; display: inline-block; }
+
+/* ---------- 规范表 ---------- */
+.spec-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.spec-table th { background: #F1EDE3; color: var(--ink); font-size: 13.5px; padding: 10px 16px; text-align: left; letter-spacing: 1px; }
+.spec-table td { border-top: 1px solid var(--line-soft); font-size: 13px; padding: 10px 16px; line-height: 1.65; vertical-align: top; color: #4A453D; }
+.spec-table td:first-child { font-weight: 700; white-space: nowrap; background: var(--paper); color: var(--ink); }
+.spec-table code { font-family: Consolas, monospace; background: #F4F1EA; padding: 1px 6px; border-radius: 5px; font-size: 12px; color: var(--orange-dark); }
+
+footer {
+  max-width: 1240px; margin: 44px auto 0; text-align: center;
+  font-size: 12.5px; color: var(--ink-faint); line-height: 1.8;
+}
+
+/* ---------- 无障碍与动效 ---------- */
+.btn:focus-visible, .opt:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 文档页头 ==================== -->
+<header class="doc-header">
+  <h1>智趣 <em>AI</em> 闯关 · 设计规范</h1>
+  <p class="sub">v1.2 现代版 ｜ 轻度手绘 ·「作业本上的爆笑课堂」 ｜ 适用于微信小程序高保真原型</p>
+  <div class="doc-tags">
+    <span class="t-orange">灵感：《漫画阿衰》校园爆笑意境</span>
+    <span class="t-green">借鉴：多邻国游戏化色彩语义</span>
+    <span class="t-yellow">v1.2：系统字族 · 提亮色板 · 线性图标</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ==================== 01 设计理念 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">01</span>设计理念</h2>
+    <p class="sec-desc">
+      整个小程序 = 一本<b>被涂鸦过的作业本</b>。用户是闯关的学生，AI 是出题的老师：答题 = 写作业，
+      答对 = 老师打勾发小红花，答错 = 红笔圈出来订正，通关 = 满分卷子贴上光荣墙。
+      v1.1 在保持意境的前提下做「减法」：<b>一屏只用力一次</b> —— 小智表情、GO 按钮、答对/答错反馈这些「关键时刻」保持高饱和与手感；
+      其余界面全部安静下来（发丝线分层、无纹理画布、语义色退到浅底色），让用户长时间答题不视觉疲惫。
+      v1.2 再做两件事：移除装饰性手写字体（层级改由字重承担）、提亮按钮色板并统一线性图标 —— 视觉更年轻，情绪依然交给小智与语义色。
+    </p>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">关键词</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <span class="badge">纸面暖底</span>
+          <span class="badge">一屏一用力</span>
+          <span class="badge">发丝线分层</span>
+          <span class="badge b-multi">按压式按钮</span>
+          <span class="badge b-judge">语义色按需出现</span>
+          <span class="badge b-point">鼓励式文案</span>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">v1.1 做了哪些减法</div>
+        <p style="font-size:13px; line-height:2; color:var(--ink-soft)">
+          满屏墨线描边 → 仅交互元素保留细描边<br>
+          每个元素硬偏移阴影 → 仅手机框与反馈抽屉投影<br>
+          画布点阵纹理 → 纯色画布<br>
+          emoji 标签满屏 → 仅反馈与奖励时刻出现
+        </p>
+      </div>
+      <div class="demo-card">
+        <div class="cap">留住了哪些意境</div>
+        <p style="font-size:13px; line-height:2; color:var(--ink-soft)">
+          作业本输入卡（横格线 + 红装订线，全站唯一）<br>
+          小智表情随答对答错实时切换<br>
+          大字时刻用 800 重字重压场（标题 / 大数字 / 主按钮）<br>
+          主按钮按压手感与课堂鼓励式文案
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 02 色彩系统 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">02</span>色彩系统</h2>
+    <p class="sec-desc">高饱和色承载固定语义且有「出现预算」：绿与红只出现在判题反馈，黄只出现在奖励时刻，橙是唯一的高频强调色。底色体系为纸面暖白，长时间注视不刺眼。</p>
+    <div class="grid-4">
+      <div class="swatch"><div class="swatch-block" style="background:#FBF9F5"></div><div class="swatch-info"><b>纸面白 <code>#FBF9F5</code></b><span>手机屏底色，暖而不黄</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#FF7548"></div><div class="swatch-info"><b>活力橙 <code>#FF7548</code></b><span>唯一高频强调色：CTA · 选中态 · 当前进度（v1.2 提亮）</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#EA5A24"></div><div class="swatch-info"><b>深橙（按压） <code>#EA5A24</code></b><span>主按钮 4px 实底阴影，模拟物理按压</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#28A461"></div><div class="swatch-info"><b>正确绿 <code>#28A461</code></b><span>正确答案 · 继续推进 · 讲解（反馈时刻出现）</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#E63946"></div><div class="swatch-info"><b>红笔红 <code>#E63946</code></b><span>错误订正 · 连击火焰（仅反馈时刻出现）</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#F5B841"></div><div class="swatch-info"><b>荧光黄 <code>#F5B841</code></b><span>XP 与奖励时刻（出现即代表「得分了」）</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#2E2A26"></div><div class="swatch-info"><b>墨色 <code>#2E2A26</code></b><span>柔和近黑：正文与交互描边</span></div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#2B6CB0"></div><div class="swatch-info"><b>蓝墨水 <code>#2B6CB0</code></b><span>链接 · 单选题 · 判断题「正确」</span></div></div>
+    </div>
+    <p class="sec-desc" style="margin-top:12px">辅助色：画布 <code style="font-family:Consolas,monospace;background:#F4F1EA;padding:2px 8px;border-radius:6px;color:#6B665C">#F4F1EB</code>、发丝线 <code style="font-family:Consolas,monospace;background:#F4F1EA;padding:2px 8px;border-radius:6px;color:#6B665C">#E7E2D7</code>、微信绿 <code style="font-family:Consolas,monospace;background:#F4F1EA;padding:2px 8px;border-radius:6px;color:#059A4E">#07C160</code>（仅登录/分享）、小智肤色 <code style="font-family:Consolas,monospace;background:#F4F1EA;padding:2px 8px;border-radius:6px;color:#B5865A">#FFE9D2</code>。v1.2 起奖励口径收敛为单一 XP，不再使用金币。</p>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 03 字体系统 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">03</span>字体系统</h2>
+    <p class="sec-desc">v1.2 起全站移除装饰性手写字体，只保留一套系统无衬线字族（PingFang SC / 微软雅黑），层级用「字重 × 字号」建立：大字时刻用 700-800 重字重压场，正文 400-500 保持安静 —— 情绪交给小智与色彩，字本身不再抢戏。</p>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">重字重大字（800 / 700）</div>
+        <div class="type-sample"><div class="label">页头 / 大数字 / 反馈大字：weight 800</div><div class="type-title">智趣 <em>AI</em> 闯关</div></div>
+        <div class="type-sample"><div class="label">反馈场景示例</div><div class="type-title" style="font-size:26px">答对啦！<em style="color:var(--green)">+10 XP</em></div></div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">正文字（400 / 500 · 系统字体栈）</div>
+        <div class="type-sample"><div class="label">PingFang SC / Microsoft YaHei，题干与讲解正文</div>
+          <p class="type-body">RAG（检索增强生成）= 先从知识库里「翻书」找资料，再让大模型「照着答案」组织语言。它让 AI 回答有据可依，减少一本正经地胡说八道。</p>
+        </div>
+        <div class="type-sample"><div class="label">鼓励式文案原则</div>
+          <p class="type-body" style="font-size:13.5px; color:var(--ink-soft)">「差一点！正确答案是 B」代替「回答错误」；「知道了，继续」代替「下一题」。</p>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">字号 × 字重阶梯</div>
+        <div class="type-ladder">
+          <span class="t32">32 页标题</span>
+          <span class="t24">24 模块标题</span>
+          <span class="t18">18 卡片标题</span>
+          <span class="t16">16 题干正文</span>
+          <span class="t14">14 辅助说明</span>
+          <span class="t12">12 标注角标</span>
+        </div>
+        <div class="btn-note">全站单一无衬线字族，层级靠字重而非换字体；800 重字重只出现在 ≥20px 大字上，一屏至多一处。</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 04 按钮 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">04</span>按钮 · 按压感只留给实底主按钮</h2>
+    <p class="sec-desc">实底按钮保留 4px 按压实底阴影（触觉反馈是功能，不是装饰）；次级按钮改为发丝线描边 + 极淡投影，视觉重量让位给主操作。<b>下方按钮均可点击体验。</b>v1.2 色板更新：橙提亮为 #FF7548、绿换为活力绿 #28A461（按压阴影同色系加深），按钮文字改用 700 字重系统字。</p>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">主操作（CTA）</div>
+        <div class="btn-row">
+          <button class="btn btn-block">GO！开始闯关</button>
+          <button class="btn btn-green btn-block">继续闯关</button>
+        </div>
+        <div class="btn-note">橙 = 提交 / 开始 / 生成；绿 = 答对后的继续推进（正向联想）。</div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">次级与柔和操作</div>
+        <div class="btn-row">
+          <button class="btn btn-soft btn-block">知道了，继续</button>
+          <button class="btn btn-ghost btn-block">再来一局</button>
+          <button class="btn btn-wx btn-block">微信一键登录</button>
+        </div>
+        <div class="btn-note">答错后的主按钮用浅橙底降低惩罚感（「安全的失败」）。</div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">禁用与危险</div>
+        <div class="btn-row">
+          <button class="btn btn-disabled btn-block">提交答案（未选择）</button>
+          <button class="btn btn-red btn-block">退出闯关</button>
+        </div>
+        <div class="btn-note">危险操作仅在退出闯关确认弹层出现；微信绿仅用于登录与分享。</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 05 选项胶囊 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">05</span>答题选项 · 四态</h2>
+    <p class="sec-desc">默认态只有发丝线描边（安静等待）；用户选中后橙色出现（「你要行动了」）；提交判题后绿/红接管（「结果时刻」）。颜色只在状态变化的瞬间进入视野。</p>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">默认态</div>
+        <div class="opt"><span class="key">A</span><span class="txt">Retrieval-Augmented Generation（检索增强生成）</span></div>
+        <div class="opt"><span class="key">B</span><span class="txt">Random Access Generation</span></div>
+        <div class="opt"><span class="key">C</span><span class="txt">Recursive Answer Grid</span></div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">选中态（提交前）</div>
+        <div class="opt"><span class="key">A</span><span class="txt">Retrieval-Augmented Generation（检索增强生成）</span></div>
+        <div class="opt selected"><span class="key">B</span><span class="txt">Random Access Generation</span></div>
+        <div class="opt"><span class="key">C</span><span class="txt">Recursive Answer Grid</span></div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">判题后：答对 / 答错</div>
+        <div class="opt correct"><span class="key">A</span><span class="txt">Retrieval-Augmented Generation</span><span class="mark">✓</span></div>
+        <div class="opt wrong"><span class="key">B</span><span class="txt">Random Access Generation</span><span class="mark">✗</span></div>
+        <div class="opt"><span class="key">C</span><span class="txt">Recursive Answer Grid</span></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 06 输入卡 / 进度条 / 徽章 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">06</span>输入卡 · 进度条 · 徽章</h2>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">作业本输入卡（全站唯一手绘签名）</div>
+        <div class="paper-card">
+          <div class="ph"><b>什么是 RAG？它和传统搜索有什么区别</b><br>输入一句话、一个主题，比如「三国为什么是魏蜀吴」…</div>
+          <div class="char-count">18 / 100</div>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-block">GO！开始闯关</button></div>
+        <div class="btn-note">横格线 + 红装订线 + 微抖动圆角只在输入卡出现 —— 一个签名比三十个签名更有签名感。</div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">进度条（细 12px · 平涂 · 无装饰）</div>
+        <div class="pbar-wrap">
+          <div class="pbar-label"><span>答题进度</span><span style="color:var(--orange-dark)">3 / 5</span></div>
+          <div class="pbar"><div class="pbar-fill" style="width:60%"></div></div>
+        </div>
+        <div class="pbar-wrap" style="margin-top:14px">
+          <div class="pbar-label"><span>本关经验值</span><span style="color:var(--yellow-deep)">+24 XP</span></div>
+          <div class="pbar xp"><div class="pbar-fill" style="width:48%"></div></div>
+        </div>
+        <div class="pbar-wrap" style="margin-top:14px">
+          <div class="pbar-label"><span>出题进度（轮询）</span><span style="color:var(--green-dark)">已出 2 / 5</span></div>
+          <div class="pbar green"><div class="pbar-fill" style="width:40%"></div></div>
+        </div>
+        <div class="pbar-wrap" style="margin-top:14px">
+          <div class="pbar-label"><span>题目分段指示（答题页 · 代替上/下题按钮）</span><span style="color:var(--orange-dark)">第 3 / 5 题</span></div>
+          <div class="q-dots"><i class="ok"></i><i class="ok"></i><i class="cur"></i><i></i><i></i></div>
+        </div>
+        <div class="btn-note">三种进度三种语义色（橙答题 / 绿出题 / 黄 XP），填充平涂不加描边；答题页用分段指示器：答过绿 · 答错红 · 当前橙（加高）· 未答灰。</div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">徽章：无描边浅底 chip</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <span class="badge b-single">单选题</span>
+          <span class="badge b-multi">多选题</span>
+          <span class="badge b-judge">判断题</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center">
+          <span class="diff-stars">★★<span class="off">★</span></span>
+          <span class="badge b-point">知识点：RAG 基础概念</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px">
+          <span class="badge b-xp">⭐ +10 XP</span>
+          <span class="badge b-streak">🔥 连击 ×3</span>
+        </div>
+        <div class="btn-note">v1.1 将描边彩胶囊降级为浅底色 chip：信息还在，视觉重量减半。题型配色不变（单选蓝 / 多选橙 / 判断黄）。</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 07 讲解反馈卡 / 气泡 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">07</span>讲解卡与对话气泡</h2>
+    <div class="grid-3">
+      <div class="demo-card">
+        <div class="cap">老师讲解卡（答对后）</div>
+        <div class="explain-card ok">
+          <div class="head"><span class="icon">📖</span><b>老师讲解</b><span class="badge b-point">RAG 基础概念</span></div>
+          <div class="body">RAG = Retrieval-Augmented Generation（检索增强生成）。先「翻书检索」找相关资料，再把资料塞给大模型组织答案 —— 相当于开卷考试，回答有据可依…</div>
+          <span class="fold">展开完整讲解 ▾</span>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">错题订正卡（答错后必读）</div>
+        <div class="explain-card bad">
+          <div class="head"><span class="icon">✏️</span><b>错题订正</b><span class="badge b-point">RAG 基础概念</span></div>
+          <div class="body">这道题错得不冤：RAG 的「检索」发生在生成答案<b>之前</b>，是先查资料再说话；而传统搜索只是把链接丢给你，并不帮你组织答案。两者的本质区别是「谁来总结」…</div>
+          <span class="fold">展开完整讲解 ▾</span>
+        </div>
+        <div class="btn-note">讲解卡是「结果时刻」，允许保留 2px 语义描边 —— 全站唯一保留粗描边的静态卡片。</div>
+      </div>
+      <div class="demo-card">
+        <div class="cap">小智对话气泡</div>
+        <div class="bubble-row">
+          <svg viewBox="0 0 180 195" style="width:84px; flex:none">
+            <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+            <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+            <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+            <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+            <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+            <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+            <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/>
+            <ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+            <circle cx="71" cy="100" r="5" fill="#2E2A26"/><circle cx="109" cy="100" r="5" fill="#2E2A26"/>
+            <circle cx="73" cy="98" r="1.7" fill="#FFFFFF"/><circle cx="111" cy="98" r="1.7" fill="#FFFFFF"/>
+            <path d="M80,121 Q90,129 100,121" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="bubble">你好呀！我是小智 🙌<br>今天想学点啥？<em>万物皆可闯关！</em></div>
+        </div>
+        <div class="btn-note">气泡描边降为发丝线，每屏至多 1 处，仅用于首页问候与出题陪伴。</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 08 小智表情包 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">08</span>小智表情包 · 情感化界面</h2>
+    <p class="sec-desc">小智 = 原创阿衰风吉祥物（橙红蘑菇头 · 大圆脸 · 豆豆眼 · 大头小身）。借鉴多邻国「吉祥物情感界面」机制：每个关键场景对应一个表情状态。v1.1 中小智是每屏「唯一用力」的元素 —— 角色本身承担情绪，界面其他部分保持安静。</p>
+    <div class="mascot-grid">
+
+      <!-- 表情 1：问好（挥手） -->
+      <div class="mascot-card">
+        <svg viewBox="0 0 180 195">
+          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M150,168 Q174,134 160,66" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+          <path d="M150,168 Q174,134 160,66" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+          <circle cx="71" cy="100" r="5" fill="#2E2A26"/><circle cx="109" cy="100" r="5" fill="#2E2A26"/>
+          <circle cx="73" cy="98" r="1.7" fill="#FFFFFF"/><circle cx="111" cy="98" r="1.7" fill="#FFFFFF"/>
+          <path d="M80,121 Q90,129 100,121" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="160" cy="66" r="12" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M170,48 L175,40 M172,60 L179,56" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <b>挥手问好</b>
+        <small>豆豆眼 + 微笑 + 手臂从体侧伸出上扬</small>
+        <span class="use">首页 / 登录页</span>
+      </div>
+
+      <!-- 表情 2：挠头思考 -->
+      <div class="mascot-card">
+        <svg viewBox="0 0 180 195">
+          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M150,168 Q178,126 126,30" stroke="#2E2A26" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <path d="M150,168 Q178,126 126,30" stroke="#FFE9D2" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+          <circle cx="75" cy="96" r="5" fill="#2E2A26"/><circle cx="113" cy="96" r="5" fill="#2E2A26"/>
+          <ellipse cx="90" cy="122" rx="6" ry="7" fill="none" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="126" cy="30" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M28,46 L20,38 M36,32 L32,22" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M30,58 Q42,58 42,70 Q42,80 32,82 L32,90" stroke="#2B6CB0" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <circle cx="32" cy="98" r="3.5" fill="#2B6CB0"/>
+        </svg>
+        <b>挠头思考</b>
+        <small>O 嘴 + 手从体侧绕至头顶 + 问号在对侧</small>
+        <span class="use">AI 出题进度页</span>
+      </div>
+
+      <!-- 表情 3：欢呼 -->
+      <div class="mascot-card">
+        <svg viewBox="0 0 180 195">
+          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M30,168 Q6,138 16,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+          <path d="M30,168 Q6,138 16,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M150,168 Q174,138 164,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+          <path d="M150,168 Q174,138 164,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+          <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
+          <circle cx="16" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="164" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(12,28) rotate(-16)"/>
+          <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(168,28) rotate(16)"/>
+        </svg>
+        <b>欢呼雀跃</b>
+        <small>弯月眼 + 大笑 + 双臂从体侧对称高举 + 双星</small>
+        <span class="use">答对反馈 / 通关</span>
+      </div>
+
+      <!-- 表情 4：懊恼 -->
+      <div class="mascot-card">
+        <svg viewBox="0 0 180 195">
+          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+          <path d="M63,96 L75,102 L63,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M117,96 L105,102 L117,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M80,126 Q90,118 100,126" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M152,32 Q161,49 152,57 Q143,49 152,32 Z" fill="#7EC8E3" stroke="#2E2A26" stroke-width="2.5"/>
+          <path d="M50,84 L58,90 M122,84 L114,90" stroke="#2E2A26" stroke-width="2" opacity=".45" stroke-linecap="round"/>
+        </svg>
+        <b>懊恼汗颜</b>
+        <small>&gt;&lt; 眼 + 倒嘴 + 汗滴（不刺眼）</small>
+        <span class="use">答错反馈</span>
+      </div>
+
+      <!-- 表情 5：通关学士帽 -->
+      <div class="mascot-card">
+        <svg viewBox="0 0 180 195">
+          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+          <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
+          <rect x="60" y="26" width="60" height="12" rx="4" fill="#2E2A26"/>
+          <path d="M46,26 L90,8 L134,26 L90,40 Z" fill="#2E2A26"/>
+          <path d="M132,26 L140,42" stroke="#FFD23F" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="141" cy="45" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
+          <path d="M90,152 L76,144 L76,162 Z M90,152 L104,144 L104,162 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="90" cy="153" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
+        </svg>
+        <b>通关骄傲</b>
+        <small>学士帽 + 领结 + 满分卷子意象</small>
+        <span class="use">通关报告 / 分享海报</span>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="sec-rule">
+
+  <!-- ==================== 09 视觉细节规范 ==================== -->
+  <section class="sec">
+    <h2 class="sec-title"><span class="no">09</span>视觉细节规范</h2>
+    <table class="spec-table">
+      <tr><th style="width:130px">元素</th><th>规范</th></tr>
+      <tr><td>描边分级</td><td>静态内容用发丝线 <code>1px #E7E2D7</code> 或无描边；交互元素（选项 / 幽灵按钮）<code>1.5px</code>；反馈讲解卡允许 <code>2px</code> 语义描边；主按钮无描边靠实底色。全局禁止「满屏同粗描边」。</td></tr>
+      <tr><td>圆角</td><td>统一体系：卡片 <code>16px</code> / 按钮 <code>14px</code> / 胶囊 <code>999px</code> / 手机 <code>36px</code>；仅作业本输入卡保留微抖动圆角作为手绘签名。</td></tr>
+      <tr><td>阴影</td><td>柔和投影仅两处：手机外框与反馈抽屉 <code>0 6px 18px rgba(62,52,40,.06)</code>；按压实底阴影仅留给实底主按钮（功能触觉，非装饰）；卡片间不叠投影。</td></tr>
+      <tr><td>画布与纸面</td><td>画布纯色 <code>#F4F1EB</code> 零纹理；手机屏纸面 <code>#FBF9F5</code>；白色卡片承载内容。作业本横格线 + 红装订线全站仅输入卡一处。</td></tr>
+      <tr><td>语义色预算</td><td>绿 / 红只出现在判题反馈与订正时刻；黄只出现在 XP 与奖励时刻；橙是唯一高频色。一屏之内高饱和色块 ≤ 1 处重点 + 反馈时刻。</td></tr>
+      <tr><td>字体</td><td>单一系统无衬线字族（PingFang SC / Microsoft YaHei），层级靠字重（400 / 500 / 700 / 800）与字号建立；800 重字重仅用于 ≥20px 大字，一屏至多一处。不引入装饰性手写字体。</td></tr>
+      <tr><td>图标预算</td><td>导航与系统图标一律用<b>单色线性 SVG</b>（stroke 2px，选中橙 / 未选灰），禁止 emoji 做导航图标；emoji 仅保留：奖励（⭐）、连击（🔥）、反馈卡头（📖✏️）、状态标记（✓✗）。</td></tr>
+      <tr><td>动效原则</td><td>动效只回答用户动作：反馈抽屉 <code>slide-up</code>、奖励 chip <code>pop</code> 级联、答错选项轻摇 <code>3px</code>；吉祥物待机漂浮为唯一环境动效。无刺眼闪烁、无自动轮播。</td></tr>
+      <tr><td>失败安全</td><td>答错不弹刺眼红屏；正确项同步标绿；按钮文案「知道了，继续」；进度条照常前进（借鉴多邻国「答错也有推进感」）。</td></tr>
+      <tr><td>文案语气</td><td>鼓励式、口语化、带校园梗：「小智正在拼命出题…」「差一点！」「把知识做成关卡，记忆会更深。」；禁止「错误 / 失败 / 惩罚」作为大标题。</td></tr>
+      <tr><td>无障碍</td><td>交互元素提供 <code>:focus-visible</code> 焦点环（2px 橙色外描边）；尊重 <code>prefers-reduced-motion</code> 关闭全部动效；正文对比度 ≥ 4.5:1。</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    智趣 AI 闯关学习小程序 · UI 设计规范 v1.2（现代版） ｜ 轻度手绘 ·「作业本上的爆笑课堂」<br>
+    本页为设计规范总览，配套原型请查看 <b>02-core-flow.html</b>（核心闯关流程 · 一行三列 · 响应式）
+  </footer>
+
+</main>
+</body>
+</html>

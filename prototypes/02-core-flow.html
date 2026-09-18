@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智趣 AI 闯关 · 核心 MVP 流程原型 v1.2（一行三列 · 响应式）</title>
+<style>
+/* ============================================================
+   智趣 AI 闯关学习小程序 · 核心 MVP 流程高保真原型 v1.2（现代版）
+   风格：轻度手绘 ·「作业本上的爆笑课堂」
+   v1.1：墨线做减法 —— 画布零纹理、静态内容发丝线、
+   一屏一处用力、语义色只在反馈时刻出现
+   v1.2：系统字族（字重分级）· 提亮按钮色板 · 线性图标 · 分段进度
+   布局：一行三列手机屏 · 响应式（1150px 两列 / 780px 单列）
+   ============================================================ */
+:root {
+  --canvas: #F4F1EB;
+  --paper: #FBF9F5;
+  --card: #FFFFFF;
+  --ink: #2E2A26;
+  --ink-soft: #8A8478;
+  --ink-faint: #B5AFA3;
+  --line: #E7E2D7;
+  --line-soft: #F0EBDD;
+  --orange: #FF7548;
+  --orange-dark: #EA5A24;
+  --orange-soft: #FFF2EB;
+  --green: #28A461;
+  --green-dark: #1B7A43;
+  --green-soft: #E9F7EF;
+  --red: #E63946;
+  --red-dark: #C42F3B;
+  --red-soft: #FDF0EE;
+  --yellow-soft: #FDF6E3;
+  --yellow-deep: #8A6D00;
+  --blue: #2B6CB0;
+  --blue-soft: #EEF4FA;
+  --wx-green: #07C160;
+  --wx-dark: #059A4E;
+  --r-card: 16px;
+  --r-btn: 14px;
+  --r-chip: 999px;
+  --shadow-card: 0 1px 2px rgba(62,52,40,.04), 0 6px 18px rgba(62,52,40,.06);
+  --shadow-pop: 0 2px 6px rgba(62,52,40,.07);
+  --font-body: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-body); color: var(--ink);
+  background: var(--canvas);
+  padding: 36px 24px 64px;
+}
+
+/* ---------- 文档页头 ---------- */
+.doc-header {
+  max-width: 1400px; margin: 0 auto 26px;
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 20px; box-shadow: var(--shadow-card);
+  padding: 24px 30px;
+}
+.doc-header h1 { font-weight: 800; font-size: 28px; letter-spacing: 1px; }
+.doc-header h1 em { font-style: normal; color: var(--orange); }
+.doc-header .sub { margin-top: 6px; font-size: 14px; color: var(--ink-soft); }
+.flow-map { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
+.flow-map .step {
+  font-size: 12px; font-weight: 600; padding: 4px 12px;
+  border-radius: var(--r-chip); background: #F1EDE3; color: #6B665C; white-space: nowrap;
+}
+.flow-map .step.on { background: var(--orange); color: #fff; }
+.flow-map .arr { color: var(--ink-faint); font-weight: 700; margin: 0 2px; }
+
+/* ---------- 屏幕网格：一行三列 ---------- */
+.flow-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 24px; }
+@media (max-width: 1150px) { .flow-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 780px) { .flow-grid { grid-template-columns: 1fr; } }
+
+.screen-wrap { display: flex; flex-direction: column; gap: 12px; }
+.phone-label { display: flex; align-items: baseline; gap: 10px; padding: 0 6px; }
+.phone-label .no { font-weight: 800; color: var(--orange); font-size: 15px; letter-spacing: 1px; min-width: 30px; }
+.phone-label b { font-weight: 700; font-size: 19px; letter-spacing: .5px; }
+.phone-label small { font-size: 11px; color: var(--ink-faint); font-family: Consolas, monospace; }
+
+/* ---------- 手机框：发丝线 + 柔和投影（去掉粗墨线外框） ---------- */
+.phone {
+  width: 100%; max-width: 380px; margin: 0 auto;
+  background: var(--paper);
+  border: 1px solid #E9E4D8;
+  border-radius: 36px;
+  box-shadow: 0 1px 2px rgba(62,52,40,.05), 0 10px 30px rgba(62,52,40,.08);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.statusbar { padding: 14px 26px 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; color: #4A453D; }
+.statusbar .sicons { display: inline-flex; align-items: center; gap: 5px; }
+.statusbar .sicons svg { width: 16px; height: 16px; display: block; color: #4A453D; }
+.scr { padding: 12px 18px 20px; flex: 1; min-height: 560px; }
+.scr.no-tab { min-height: 640px; }
+.home-ind { width: 120px; height: 5px; background: #D9D3C6; border-radius: 99px; margin: 4px auto 10px; }
+
+.tabbar { display: flex; border-top: 1px solid var(--line); background: #FFFDF9; padding: 7px 0 5px; }
+.tab { flex: 1; text-align: center; font-size: 11px; font-weight: 700; color: #A9A296; }
+.tab .ico { display: grid; place-items: center; margin-bottom: 2px; }
+.tab .ico svg { width: 22px; height: 22px; display: block; color: #B8B1A4; }
+.tab.on { color: var(--orange-dark); }
+.tab.on .ico svg { color: var(--orange); }
+
+/* ---------- 屏下说明卡：退到背景的开发标注 ---------- */
+.note-card {
+  max-width: 380px; width: 100%; margin: 0 auto;
+  background: #F7F5F0; border-radius: 12px;
+  padding: 12px 15px;
+}
+.note-card b { font-size: 11.5px; color: var(--ink-soft); letter-spacing: 1px; display: block; }
+.note-card ul { margin: 7px 0 0 2px; list-style: none; }
+.note-card li { font-size: 12px; line-height: 1.66; color: #6B665C; padding-left: 14px; position: relative; margin-bottom: 3px; }
+.note-card li::before { content: '–'; position: absolute; left: 0; color: var(--ink-faint); }
+.note-card li code { font-family: Consolas, monospace; font-size: 11px; background: #EFECE3; padding: 1px 5px; border-radius: 4px; color: var(--blue); }
+
+/* ---------- 吉祥物尺寸 ---------- */
+.mascot { display: block; }
+.m128 { width: 128px; } .m112 { width: 112px; } .m108 { width: 108px; }
+.m86 { width: 86px; } .m62 { width: 62px; } .m58 { width: 58px; }
+
+/* ---------- 通用组件（与设计规范 v1.2 一致） ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; font-size: 17px; letter-spacing: .5px;
+  padding: 12px 22px; cursor: pointer; user-select: none;
+  border: none; border-radius: var(--r-btn);
+  color: #fff; background: var(--orange); box-shadow: 0 4px 0 var(--orange-dark);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--orange-dark); filter: brightness(.97); }
+.btn.btn-green { background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
+.btn.btn-green:active { box-shadow: 0 0 0 var(--green-dark); }
+.btn.btn-wx { background: var(--wx-green); box-shadow: 0 4px 0 var(--wx-dark); font-size: 16px; }
+.btn.btn-wx:active { box-shadow: 0 0 0 var(--wx-dark); }
+.btn.btn-soft { background: var(--orange-soft); color: var(--orange-dark); box-shadow: 0 3px 0 rgba(234,90,36,.16); }
+.btn.btn-soft:active { box-shadow: 0 0 0 rgba(234,90,36,.16); }
+.btn.btn-ghost { background: #fff; color: var(--ink); border: 1.5px solid var(--line); box-shadow: var(--shadow-pop); }
+.btn.btn-ghost:active { transform: translateY(1px); box-shadow: none; }
+.btn-block { display: flex; width: 100%; }
+
+/* 选项胶囊 */
+.opt {
+  display: flex; align-items: center; gap: 11px;
+  border: 1.5px solid var(--line); border-radius: var(--r-chip);
+  background: #fff; padding: 11px 13px; margin-bottom: 10px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.opt .key {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  background: #F4F1E9; color: var(--ink-soft);
+}
+.opt .txt { font-size: 13.5px; line-height: 1.45; font-weight: 500; color: #4A453D; }
+.opt .mark { margin-left: auto; flex: none; font-size: 16px; font-weight: 800; }
+.opt.selected { border-color: var(--orange); background: var(--orange-soft); }
+.opt.selected .key { background: var(--orange); color: #fff; }
+.opt.correct { border-color: var(--green); background: var(--green-soft); }
+.opt.correct .key { background: var(--green); color: #fff; }
+.opt.correct .mark { color: var(--green); }
+.opt.wrong { border-color: var(--red); background: var(--red-soft); animation: shake .4s ease; }
+.opt.wrong .key { background: var(--red); color: #fff; }
+.opt.wrong .mark { color: var(--red); }
+.opt.dim { opacity: .5; }
+
+/* 作业本输入卡（全站唯一手绘签名） */
+.paper-card {
+  position: relative;
+  background: repeating-linear-gradient(to bottom, transparent 0 30px, #F0EBDC 30px 31px), #FEFDF9;
+  border: 1.5px solid #E3DDCE;
+  border-radius: 14px 18px 13px 17px;
+  padding: 16px 16px 12px 42px;
+  box-shadow: var(--shadow-card);
+}
+.paper-card::before { content: ''; position: absolute; top: 10px; bottom: 10px; left: 29px; width: 2px; background: var(--red); opacity: .3; }
+.paper-card .ph { font-size: 14px; color: #B5AFA3; line-height: 30px; min-height: 60px; }
+.paper-card .ph b { color: var(--ink); font-weight: 600; }
+.char-count { text-align: right; font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
+
+/* 进度条 */
+.pbar-label { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.pbar { height: 12px; border-radius: var(--r-chip); background: #ECE7DB; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: var(--r-chip); background: var(--orange); }
+.pbar.xp .pbar-fill { background: #F3C95C; }
+.pbar.green .pbar-fill { background: #57A87E; }
+
+/* 徽章：无描边浅底 chip */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; padding: 4px 11px;
+  border-radius: var(--r-chip);
+  background: #F1EDE3; color: #6B665C; white-space: nowrap;
+}
+.badge.b-single { background: var(--blue-soft); color: var(--blue); }
+.badge.b-multi { background: var(--orange-soft); color: var(--orange-dark); }
+.badge.b-judge { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-point { background: var(--green-soft); color: var(--green-dark); }
+.badge.b-xp { background: var(--yellow-soft); color: var(--yellow-deep); }
+.badge.b-streak { background: var(--red-soft); color: var(--red); }
+
+/* 讲解卡（反馈时刻保留 2px 语义描边） */
+.explain-card { border: 2px solid; border-radius: 14px; padding: 13px 15px; }
+.explain-card.ok { border-color: var(--green); background: var(--green-soft); }
+.explain-card.bad { border-color: var(--red); background: var(--red-soft); }
+.explain-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.explain-card .head .icon { font-size: 17px; }
+.explain-card .head b { font-size: 14.5px; }
+.explain-card.ok .head b { color: var(--green-dark); }
+.explain-card.bad .head b { color: var(--red-dark); }
+.explain-card .head .badge { margin-left: auto; }
+.explain-card .body { font-size: 13px; line-height: 1.72; color: #4A453D; }
+.explain-card .fold { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green); display: inline-flex; align-items: center; gap: 4px; }
+.explain-card.bad .fold { color: var(--red); }
+
+/* 对话气泡 */
+.bubble {
+  position: relative; background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 4px 14px 14px 14px;
+  padding: 10px 14px; font-size: 13px; font-weight: 600; color: #4A453D;
+  line-height: 1.6; box-shadow: none;
+}
+.bubble::before { content: ''; position: absolute; left: -9px; top: 13px; width: 12px; height: 12px; background: #fff; border-left: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); transform: rotate(45deg); }
+.bubble em { font-style: normal; color: var(--orange); }
+
+/* ---------- S1 登录页 ---------- */
+.s1 { display: flex; flex-direction: column; }
+.hero { text-align: center; padding: 24px 0 6px; }
+.hero-logo { font-weight: 800; font-size: 32px; letter-spacing: 1px; }
+.hero-logo em { font-style: normal; color: var(--orange); }
+.hero-slogan { margin-top: 6px; font-size: 13px; color: var(--ink-soft); font-weight: 700; letter-spacing: 2px; }
+.mascot-stage { display: flex; align-items: center; gap: 12px; padding: 18px 4px 8px; }
+.mascot-stage .m128 { flex: none; animation: floaty 3s ease-in-out infinite; }
+.sell-list { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.sell-list li {
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 15px; font-size: 13px; font-weight: 500; color: #4A453D;
+}
+.login-zone { margin-top: auto; padding-top: 22px; text-align: center; }
+.skip-link { display: block; margin-top: 12px; font-size: 12.5px; color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.skip-link.center { text-align: center; }
+.protocol { margin-top: 10px; font-size: 10.5px; color: var(--ink-faint); }
+
+/* ---------- S2 首页 ---------- */
+.home-top { display: flex; align-items: center; gap: 10px; }
+.home-top .m58 { flex: none; }
+.home-top .bubble { flex: 1; }
+.wallet { margin-left: auto; }
+.go-btn { margin-top: 14px; font-size: 19px; padding: 14px 22px; }
+.insp-title { font-weight: 700; font-size: 15px; letter-spacing: .5px; margin: 18px 0 9px; color: #4A453D; }
+.insp-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.insp-tags .badge { cursor: pointer; }
+.sec-mini-title { font-weight: 700; font-size: 15px; letter-spacing: .5px; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; color: #4A453D; }
+.sec-mini-title::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.recent-card {
+  display: flex; align-items: center; gap: 10px;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 14px; margin-bottom: 10px;
+}
+.recent-card .rc-main { flex: 1; min-width: 0; }
+.recent-card b { font-size: 13.5px; display: block; }
+.recent-card small { font-size: 11px; color: var(--ink-soft); display: block; margin: 3px 0; }
+.rc-stars { font-size: 11.5px; color: #C98F00; font-weight: 700; }
+.mini-btn {
+  flex: none; font-size: 12px; font-weight: 700;
+  padding: 7px 14px; border: 1.5px solid var(--line); border-radius: var(--r-chip);
+  background: #fff; color: var(--orange-dark); cursor: pointer;
+}
+.mini-btn:active { transform: translateY(1px); }
+
+/* ---------- S3 出题进度页 ---------- */
+.gen-top { display: flex; align-items: center; gap: 10px; }
+.x-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--line);
+  background: #fff; font-size: 13px; font-weight: 800; color: var(--ink-soft); cursor: pointer;
+}
+.x-btn:active { transform: translateY(1px); }
+.gen-top b { font-weight: 700; font-size: 16px; letter-spacing: .5px; }
+.topic-chip {
+  margin-top: 12px; font-size: 12px; font-weight: 600; color: var(--ink-soft);
+  background: #F1EDE3; border-radius: var(--r-chip); padding: 7px 14px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gen-stage { display: flex; align-items: center; gap: 12px; padding: 16px 2px 10px; }
+.gen-stage .m112 { flex: none; animation: floaty 2.6s ease-in-out infinite; }
+.gen-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 15px; }
+.q-list { list-style: none; margin-top: 11px; }
+.q-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 8px 2px; border-top: 1px solid var(--line-soft); color: #6B665C; }
+.q-list li:first-child { border-top: none; }
+.q-list .q-no { flex: none; width: 22px; text-align: center; font-weight: 800; }
+.q-list .done { color: var(--green-dark); font-weight: 600; }
+.q-list .ing { color: var(--orange-dark); font-weight: 700; }
+.q-list .wait { color: var(--ink-faint); }
+.dots { display: inline-flex; gap: 3px; margin-left: 4px; align-items: center; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); animation: bounce 1s infinite; }
+.dots i:nth-child(2) { animation-delay: .18s; }
+.dots i:nth-child(3) { animation-delay: .36s; }
+.gen-tip { margin-top: 10px; font-size: 12px; font-weight: 700; color: var(--yellow-deep); background: var(--yellow-soft); border-radius: 10px; padding: 8px 12px; line-height: 1.5; }
+
+/* ---------- S4-S6 答题页 ---------- */
+.quiz-nav { display: flex; align-items: center; gap: 10px; }
+.quiz-nav .title { flex: 1; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .5px; }
+.quiz-nav .streak-badge { flex: none; animation: flame 1.6s ease-in-out infinite; display: inline-flex; }
+.quiz-nav .streak-badge.muted { animation: none; opacity: .7; }
+.quiz-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 10px; }
+.diff-stars { font-size: 12.5px; letter-spacing: 2px; color: #C98F00; font-weight: 700; margin-left: auto; }
+.diff-stars .off { opacity: .25; }
+.stem-card {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--r-card);
+  padding: 15px 16px 13px; margin-bottom: 13px; position: relative;
+}
+.stem-card .stem-no { position: absolute; top: -11px; right: 12px; background: #F1EDE3; color: #6B665C; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: var(--r-chip); letter-spacing: 1px; }
+.stem-card p { font-size: 14px; line-height: 1.7; font-weight: 600; color: #33302B; }
+.multi-hint { font-size: 12px; color: var(--orange-dark); font-weight: 700; background: var(--orange-soft); border-radius: var(--r-chip); padding: 6px 12px; margin-bottom: 12px; }
+.judge-row { display: flex; gap: 12px; margin-top: 4px; }
+.judge-opt {
+  flex: 1; text-align: center; padding: 20px 10px;
+  border: 1.5px solid var(--line); border-radius: 16px;
+  background: #fff; cursor: pointer;
+}
+.judge-opt:active { transform: translateY(1px); }
+.judge-opt .big { font-size: 28px; display: block; }
+.judge-opt .lbl { font-weight: 700; font-size: 16px; letter-spacing: 2px; display: block; margin-top: 6px; color: #4A453D; }
+.judge-opt.j-yes.selected { border-color: var(--blue); background: var(--blue-soft); }
+.judge-opt.j-no.selected { border-color: var(--red); background: var(--red-soft); }
+.quiz-foot { margin-top: 16px; }
+.quiz-foot .xp-inline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+
+/* ---------- 题目分段指示器（答题页进度，代替上/下题按钮） ---------- */
+.q-dots { display: flex; gap: 6px; align-items: center; margin: 12px 0 4px; }
+.q-dots i { flex: 1; height: 8px; border-radius: 99px; background: #ECE7DB; }
+.q-dots i.ok { background: #57A87E; }
+.q-dots i.bad { background: var(--red); opacity: .75; }
+.q-dots i.cur { background: var(--orange); height: 10px; }
+
+/* ---------- S7-S8 反馈抽屉 ---------- */
+.fb-sheet {
+  margin-top: 12px; background: #fff;
+  border: 1px solid var(--line); border-radius: 18px 18px 14px 14px;
+  box-shadow: var(--shadow-card);
+  padding: 14px 14px 15px; position: relative;
+  animation: slideUp .25s ease-out;
+}
+.fb-sheet::before { content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; border-radius: 99px; background: #E3DDCE; }
+.fb-head { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.fb-head .m62 { flex: none; }
+.fb-head .fb-title { flex: 1; }
+.fb-head .fb-title b { font-weight: 800; font-size: 20px; letter-spacing: .5px; display: block; }
+.fb-head .fb-title.ok b { color: var(--green-dark); }
+.fb-head .fb-title.bad b { color: var(--red-dark); }
+.fb-head .fb-title small { font-size: 11.5px; color: var(--ink-soft); font-weight: 600; display: block; margin: 3px 0 4px; }
+.reward-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.reward-row .badge { animation: pop .4s ease backwards; }
+.reward-row .badge:nth-child(2) { animation-delay: .08s; }
+.reward-row .badge:nth-child(3) { animation-delay: .16s; }
+.fb-body { margin-top: 11px; }
+
+/* ---------- S9 报告页 ---------- */
+.report-hero { text-align: center; padding: 8px 0 2px; }
+.report-hero .m108 { margin: 0 auto; animation: floaty 3s ease-in-out infinite; }
+.report-hero h2 { font-weight: 800; font-size: 24px; letter-spacing: 3px; color: var(--orange-dark); margin-top: 2px; }
+.report-hero .r-topic { font-size: 12px; color: var(--ink-soft); font-weight: 700; margin-top: 5px; }
+.ring-zone { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-card); padding: 15px; margin-top: 14px; }
+.ring-wrap { flex: none; display: flex; flex-direction: column; align-items: center; }
+.ring {
+  width: 118px; height: 118px; border-radius: 50%;
+  background: conic-gradient(var(--green) 0 288deg, #EDE8DC 288deg 360deg);
+  display: grid; place-items: center;
+}
+.ring .inner { width: 90px; height: 90px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #E9E4D8; }
+.ring .num { font-weight: 800; font-size: 30px; color: var(--green-dark); line-height: 1; }
+.ring .num small { font-size: 14px; }
+.ring-cap { margin-top: 7px; font-size: 10px; color: var(--ink-soft); font-weight: 700; letter-spacing: 2px; }
+.ring-side { flex: 1; display: flex; flex-direction: column; }
+.ring-side .stat {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #4A453D;
+  padding: 8px 0; border-bottom: 1px solid var(--line-soft);
+}
+.ring-side .stat:last-child { border-bottom: none; }
+.ring-side .stat em { font-style: normal; margin-left: auto; font-weight: 800; font-size: 14px; color: var(--orange-dark); }
+.sum-card { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-card); padding: 13px 15px; }
+.sum-card h3, .pw-card h3 { font-weight: 700; font-size: 15px; letter-spacing: .5px; margin-bottom: 8px; color: #33302B; }
+.sum-card ol { margin-left: 18px; }
+.sum-card li { font-size: 12.5px; line-height: 1.66; margin-bottom: 5px; color: #4A453D; }
+.pw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.pw-card { border-radius: 14px; padding: 11px 13px; }
+.pw-card.good { background: var(--green-soft); }
+.pw-card.bad2 { background: var(--red-soft); }
+.pw-card h3 .t-good { color: var(--green-dark); }
+.pw-card h3 .t-bad { color: var(--red-dark); }
+.pw-card ul { list-style: none; }
+.pw-card li { font-size: 12px; line-height: 1.55; margin-bottom: 5px; padding-left: 17px; position: relative; color: #4A453D; }
+.pw-card.good li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 800; }
+.pw-card.bad2 li::before { content: '✗'; position: absolute; left: 0; color: var(--red); font-weight: 800; }
+.quote-bar {
+  margin-top: 12px; text-align: center; padding: 12px 14px;
+  background: var(--yellow-soft); border-radius: 14px;
+  font-weight: 700; font-size: 15px; letter-spacing: .5px; color: #7A5D00; line-height: 1.6;
+}
+.report-foot { display: flex; gap: 10px; margin-top: 14px; }
+.report-foot .btn { flex: 1; font-size: 15px; padding: 11px 10px; }
+
+/* ---------- S10 海报页 ---------- */
+.poster-stage { padding: 6px 4px; }
+.poster { width: 232px; margin: 0 auto; border: 2px solid #2E2A26; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 6px 6px 0 rgba(46,42,38,.12); position: relative; }
+.poster .p-top { background: linear-gradient(140deg, #FF7548 0%, #FF9A6E 100%); color: #fff; text-align: center; padding: 20px 16px 18px; }
+.poster .p-logo { font-weight: 800; font-size: 18px; letter-spacing: 2px; }
+.poster .p-logo em { font-style: normal; color: #FFE9D2; }
+.poster .p-quote { font-weight: 700; font-size: 18px; letter-spacing: 1.5px; line-height: 1.65; margin-top: 12px; }
+.poster .p-body { padding: 16px 16px 18px; text-align: center; position: relative; }
+.poster .p-topic { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+.poster .p-acc { font-weight: 800; font-size: 38px; color: var(--orange-dark); line-height: 1.15; }
+.poster .p-acc small { font-size: 14px; }
+.poster .p-acc-sub { font-size: 10.5px; font-weight: 700; color: var(--ink-soft); }
+.poster .m86 { margin: 8px auto 0; }
+.poster .p-code { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.poster .qr { width: 60px; height: 60px; border: 2px solid #2E2A26; border-radius: 10px; background: repeating-conic-gradient(#2E2A26 0 25%, #fff 0 50%) 0 0 / 14px 14px; }
+.poster .qr-side { text-align: left; font-size: 10.5px; color: var(--ink-soft); line-height: 1.6; font-weight: 700; }
+.stamp-round {
+  position: absolute; top: 12px; right: 10px; width: 82px; height: 82px;
+  border: 3px double var(--red); border-radius: 50%;
+  transform: rotate(-14deg); color: var(--red);
+  display: grid; place-items: center; text-align: center;
+  font-weight: 700; font-size: 15px; letter-spacing: 2px; line-height: 1.3;
+  opacity: .85; background: rgba(255,255,255,.6);
+}
+.poster-ops { display: flex; gap: 10px; margin-top: 16px; }
+.poster-ops .btn { flex: 1; font-size: 14.5px; padding: 11px 8px; }
+
+/* ---------- 动效与无障碍 ---------- */
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes bounce { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+@keyframes flame { 0%,100% { transform: rotate(-4deg) scale(1); } 50% { transform: rotate(4deg) scale(1.06); } }
+@keyframes pop { 0% { transform: scale(.3); opacity: 0; } 65% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(26px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.btn:focus-visible, .opt:focus-visible, .judge-opt:focus-visible, .mini-btn:focus-visible, .x-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+footer { max-width: 1400px; margin: 40px auto 0; text-align: center; font-size: 12.5px; color: var(--ink-faint); line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<!-- ==================== 小智表情包 · SVG symbol 定义（全页复用） ==================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 问好（挥手） -->
+    <symbol id="mascot-wave" viewBox="0 0 180 195">
+      <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M150,168 Q174,134 160,66" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <path d="M150,168 Q174,134 160,66" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+      <circle cx="71" cy="100" r="5" fill="#2E2A26"/><circle cx="109" cy="100" r="5" fill="#2E2A26"/>
+      <circle cx="73" cy="98" r="1.7" fill="#FFFFFF"/><circle cx="111" cy="98" r="1.7" fill="#FFFFFF"/>
+      <path d="M80,121 Q90,129 100,121" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="160" cy="66" r="12" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M170,48 L175,40 M172,60 L179,56" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+    <!-- 挠头思考 -->
+    <symbol id="mascot-think" viewBox="0 0 180 195">
+      <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M150,168 Q178,126 126,30" stroke="#2E2A26" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="M150,168 Q178,126 126,30" stroke="#FFE9D2" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+      <circle cx="75" cy="96" r="5" fill="#2E2A26"/><circle cx="113" cy="96" r="5" fill="#2E2A26"/>
+      <ellipse cx="90" cy="122" rx="6" ry="7" fill="none" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="126" cy="30" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M28,46 L20,38 M36,32 L32,22" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M30,58 Q42,58 42,70 Q42,80 32,82 L32,90" stroke="#2B6CB0" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="32" cy="98" r="3.5" fill="#2B6CB0"/>
+    </symbol>
+    <!-- 欢呼 -->
+    <symbol id="mascot-cheer" viewBox="0 0 180 195">
+      <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M30,168 Q6,138 16,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <path d="M30,168 Q6,138 16,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M150,168 Q174,138 164,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <path d="M150,168 Q174,138 164,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+      <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
+      <circle cx="16" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="164" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(12,28) rotate(-16)"/>
+      <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(168,28) rotate(16)"/>
+    </symbol>
+    <!-- 懊恼汗颜 -->
+    <symbol id="mascot-sweat" viewBox="0 0 180 195">
+      <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+      <path d="M63,96 L75,102 L63,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M117,96 L105,102 L117,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M80,126 Q90,118 100,126" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M152,32 Q161,49 152,57 Q143,49 152,32 Z" fill="#7EC8E3" stroke="#2E2A26" stroke-width="2.5"/>
+      <path d="M50,84 L58,90 M122,84 L114,90" stroke="#2E2A26" stroke-width="2" opacity=".45" stroke-linecap="round"/>
+    </symbol>
+    <!-- 通关学士帽 -->
+    <symbol id="mascot-grad" viewBox="0 0 180 195">
+      <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
+      <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
+      <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
+      <rect x="60" y="26" width="60" height="12" rx="4" fill="#2E2A26"/>
+      <path d="M46,26 L90,8 L134,26 L90,40 Z" fill="#2E2A26"/>
+      <path d="M132,26 L140,42" stroke="#FFD23F" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="141" cy="45" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
+      <path d="M90,152 L76,144 L76,162 Z M90,152 L104,144 L104,162 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="90" cy="153" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
+    </symbol>
+    <!-- 底部导航 / 状态栏：单色线性图标 -->
+    <symbol id="icon-flag" viewBox="0 0 24 24">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4 22v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-signal" viewBox="0 0 24 24">
+      <rect x="2" y="15" width="3.4" height="6" rx="1" fill="currentColor"/>
+      <rect x="7.5" y="11" width="3.4" height="10" rx="1" fill="currentColor"/>
+      <rect x="13" y="7" width="3.4" height="14" rx="1" fill="currentColor"/>
+      <rect x="18.6" y="3" width="3.4" height="18" rx="1" fill="currentColor"/>
+    </symbol>
+    <symbol id="icon-battery" viewBox="0 0 24 24">
+      <rect x="2" y="8" width="17" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <rect x="4" y="10" width="11" height="5" rx="1" fill="currentColor"/>
+      <path d="M21.5 10.5v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ==================== 文档页头 ==================== -->
+<header class="doc-header">
+  <h1>智趣 <em>AI</em> 闯关 · 核心 MVP 流程原型</h1>
+  <p class="sub">v1.2 现代版 ｜ 轻度手绘 ·「作业本上的爆笑课堂」 ｜ 一行三列 · 响应式 ｜ 配套设计规范见 01-design-system.html</p>
+  <div class="flow-map">
+    <span class="step">S1 微信登录</span><span class="arr">→</span>
+    <span class="step on">S2 首页输入</span><span class="arr">→</span>
+    <span class="step">S3 AI 出题进度</span><span class="arr">→</span>
+    <span class="step">S4 单选题</span><span class="arr">→</span>
+    <span class="step">S5 多选题</span><span class="arr">→</span>
+    <span class="step">S6 判断题</span><span class="arr">→</span>
+    <span class="step">S7 答对反馈</span><span class="arr">/</span>
+    <span class="step">S8 答错反馈</span><span class="arr">→</span>
+    <span class="step">S9 通关报告</span><span class="arr">→</span>
+    <span class="step">S10 分享海报</span>
+  </div>
+</header>
+
+<div class="flow-grid">
+
+<!-- ==================== S1 微信登录引导 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S1</span>
+    <div><b>微信登录引导</b><small>pages/login/index（MVP 预留）</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr s1">
+      <div class="hero">
+        <div class="hero-logo">智趣 <em>AI</em> 闯关</div>
+        <div class="hero-slogan">万物皆可闯关</div>
+      </div>
+      <div class="mascot-stage">
+        <svg class="mascot m128" viewBox="0 0 180 195"><use href="#mascot-wave"/></svg>
+        <div class="bubble">你好呀！我是小智<br>把想学的东西丢给我，<br>马上给你出一套<em>闯关题</em>！</div>
+      </div>
+      <ul class="sell-list">
+        <li>一句话 → 自动生成 5 道闯关题</li>
+        <li>边玩边学，答错也有深度讲解</li>
+        <li>通关自动生成 AI 复盘报告</li>
+      </ul>
+      <div class="login-zone">
+        <button class="btn btn-wx btn-block">微信一键登录</button>
+        <a class="skip-link">暂不登录，先逛逛</a>
+        <p class="protocol">登录即同意《用户协议》与《隐私政策》</p>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>MVP 阶段用户系统后置（方案 2.3），本页为 Phase 5 微信授权登录预留位，默认走「先逛逛」直接进首页。</li>
+      <li>卖点三连对应需求 P0 核心闭环：出题 → 答题讲解 → 复盘报告。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S2 首页 · 极简输入 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S2</span>
+    <div><b>首页 · 极简输入</b><small>pages/index/index</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr">
+      <div class="home-top">
+        <svg class="mascot m58" viewBox="0 0 180 195"><use href="#mascot-wave"/></svg>
+        <div class="bubble">Hi～今天想学点啥？</div>
+        <span class="wallet badge b-xp">⭐ 128 XP</span>
+      </div>
+
+      <div class="paper-card" style="margin-top:14px">
+        <div class="ph"><b>什么是 RAG？它和传统搜索有什么区别</b><br>一句话、一段话、一个主题都行…</div>
+        <div class="char-count">18 / 100</div>
+      </div>
+      <button class="btn btn-block go-btn">GO！开始闯关</button>
+
+      <div class="insp">
+        <div class="insp-title">试试这些</div>
+        <div class="insp-tags">
+          <span class="badge b-multi">RAG 入门</span>
+          <span class="badge b-single">三国为什么是魏蜀吴</span>
+          <span class="badge b-judge">咖啡因有多可怕</span>
+          <span class="badge b-point">黑洞里面是什么</span>
+          <span class="badge b-xp">Python 装饰器</span>
+          <span class="badge b-streak">睡前冷知识</span>
+        </div>
+      </div>
+
+      <div class="sec-mini-title">最近闯关</div>
+      <div class="recent-card">
+        <div class="rc-main">
+          <b>RAG 入门闯关</b>
+          <small>5 题 · 昨天 20:32</small>
+          <div class="rc-stars">★★★★☆ · 正确率 80%</div>
+        </div>
+        <button class="mini-btn">再战</button>
+      </div>
+      <div class="recent-card">
+        <div class="rc-main">
+          <b>睡眠科学十连问</b>
+          <small>5 题 · 前天 22:10</small>
+          <div class="rc-stars">★★★★★ · 正确率 95%</div>
+        </div>
+        <button class="mini-btn">再战</button>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><span class="ico"><svg viewBox="0 0 24 24"><use href="#icon-flag"/></svg></span>闯关</div>
+      <div class="tab"><span class="ico"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span>我的</div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>极简主页（需求 P0）：仅一个<b>大而醒目的输入框</b> + 「开始生成」按钮，别无干扰。</li>
+      <li>点击 GO → <code>POST /api/v1/quiz/generate</code> 提交出题任务，拿到 <code>task_id</code> 后跳转 S3。</li>
+      <li>输入长度与敏感词校验在前端预检，后端二次过滤（方案 14.2）。</li>
+      <li>灵感标签点击即填入输入框，降低「不知道学什么」的启动门槛。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S3 AI 出题进度 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S3</span>
+    <div><b>AI 出题进度</b><small>pages/index/generating</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr">
+      <div class="gen-top">
+        <button class="x-btn">✕</button>
+        <b>小智正在出题…</b>
+      </div>
+      <div class="topic-chip">主题：什么是 RAG？它和传统搜索有什么区别</div>
+      <div class="gen-stage">
+        <svg class="mascot m112" viewBox="0 0 180 195"><use href="#mascot-think"/></svg>
+        <div class="bubble">小智正在拼命出题…<br>一边出你一边答，<em>不用干等</em>！</div>
+      </div>
+
+      <div class="gen-card">
+        <div class="pbar-label"><span>出题进度</span><span style="color:var(--green-dark)">已出 2 / 5</span></div>
+        <div class="pbar green"><div class="pbar-fill" style="width:40%"></div></div>
+        <ul class="q-list">
+          <li class="done"><span class="q-no">✓</span>第 1 题 · 单选题「RAG 的全称是什么」</li>
+          <li class="done"><span class="q-no">✓</span>第 2 题 · 判断题「RAG 必须联网检索」</li>
+          <li class="ing"><span class="q-no">◉</span>第 3 题 · 正在生成<span class="dots"><i></i><i></i><i></i></span></li>
+          <li class="wait"><span class="q-no">○</span>第 4 题 · 排队中</li>
+          <li class="wait"><span class="q-no">○</span>第 5 题 · 排队中</li>
+        </ul>
+        <div class="gen-tip">首题就绪即可开始答题，后续题目边答边到！</div>
+      </div>
+
+      <button class="btn btn-block" style="margin-top:14px">第 1 题已就绪，立即开答！</button>
+      <a class="skip-link center">取消并返回首页</a>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>「提交任务 + 轮询」异步方案（方案 9.4）：出题约 15~30s，前端每 1~2s 轮询 <code>GET /api/v1/quiz/task/{task_id}</code>。</li>
+      <li><code>generated_count ≥ 1</code> 即可跳转闯关页；<code>done</code> 停止轮询；<code>failed</code> 显示重试（本页含 failed 兜底文案）。</li>
+      <li>进度可视化「已生成 N/总数」而非单纯转圈（交互原则 11.5-3），逐题点亮列表降低等待焦虑。</li>
+      <li>出题中 ✕ 二次确认，防误触丢失 task_id。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S4 答题页 · 单选题 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S4</span>
+    <div><b>闯关答题 · 单选题</b><small>pages/quiz/index · type=single</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">第 3 / 5 题</div>
+        <span class="streak-badge badge b-streak">🔥 连击 ×3</span>
+      </div>
+      <div class="q-dots"><i class="ok"></i><i class="ok"></i><i class="cur"></i><i></i><i></i></div>
+      <div class="quiz-meta">
+        <span class="badge b-single">单选题</span>
+        <span class="badge b-point">知识点：RAG 基础概念</span>
+        <span class="diff-stars">★★<span class="off">★</span></span>
+      </div>
+      <div class="stem-card">
+        <span class="stem-no">Q3</span>
+        <p>RAG 的英文全称是什么？它所强调的核心思想是？</p>
+      </div>
+      <div class="opt"><span class="key">A</span><span class="txt">Random Answer Generation，随机生成答案</span></div>
+      <div class="opt selected"><span class="key">B</span><span class="txt">Retrieval-Augmented Generation，先检索再生成</span></div>
+      <div class="opt"><span class="key">C</span><span class="txt">Recursive Analysis Grid，递归分析网格</span></div>
+      <div class="opt"><span class="key">D</span><span class="txt">Realtime API Gateway，实时接口网关</span></div>
+      <div class="quiz-foot">
+        <div class="xp-inline"><span>本关已得 ⭐ +24 XP</span><span>连击奖励翻倍中</span></div>
+        <button class="btn btn-block">提交答案</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>沉浸式答题（无 Tab），✕ 退出需二次确认并放弃本局。</li>
+      <li>进度用<b>分段题目指示器</b>（答对绿 · 答错红 · 当前橙 · 未答灰）：刻意不设「上一题」按钮 —— 即时判题模式下已答题不可回改（保护连击与正确率口径），回看讲解交给 P1 错题本；「下一题」即反馈后的「继续闯关」。</li>
+      <li>题型徽章、难度、知识点标签由题库 JSON 的 <code>type / difficulty / knowledge_point</code> 字段直接驱动。</li>
+      <li>前端本地判题（方案 9.2），不请求后端；每题记录 <code>selected_answers</code> 与 <code>duration_ms</code>。</li>
+      <li>连击（combos）激励连续答对，XP 奖励随连击上浮。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S5 答题页 · 多选题 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S5</span>
+    <div><b>闯关答题 · 多选题</b><small>pages/quiz/index · type=multiple</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">第 4 / 5 题</div>
+        <span class="streak-badge badge b-streak">🔥 连击 ×3</span>
+      </div>
+      <div class="q-dots"><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="cur"></i><i></i></div>
+      <div class="quiz-meta">
+        <span class="badge b-multi">多选题</span>
+        <span class="badge b-point">知识点：RAG 应用场景</span>
+        <span class="diff-stars">★★★</span>
+      </div>
+      <div class="stem-card">
+        <span class="stem-no">Q4</span>
+        <p>以下哪些属于 RAG 的典型应用场景？（选出所有正确项）</p>
+      </div>
+      <div class="multi-hint">多选题：本题共有 2 个正确答案，选齐才算对</div>
+      <div class="opt selected"><span class="key">A</span><span class="txt">企业知识库问答：员工问制度，AI 查手册再回答</span></div>
+      <div class="opt"><span class="key">B</span><span class="txt">让 AI 凭空编写一首完全虚构的史诗</span></div>
+      <div class="opt selected"><span class="key">C</span><span class="txt">客服机器人：先检索工单和帮助文档，再组织回复</span></div>
+      <div class="opt"><span class="key">D</span><span class="txt">手机计算器计算 1 + 1 = 2</span></div>
+      <div class="quiz-foot">
+        <div class="xp-inline"><span>本关已得 ⭐ +24 XP</span><span>已选 2 项</span></div>
+        <button class="btn btn-block">提交答案</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>多选交互：再次点击取消选中；提交前至少选 1 项，否则按钮禁用。</li>
+      <li>判题规则：<code>selected_answers</code> 与 <code>answer</code> 数组集合完全相等才判定正确。</li>
+      <li>提示条明示正确答案数量，降低多选题挫败感（「安全的失败」设计）。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S6 答题页 · 判断题 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S6</span>
+    <div><b>闯关答题 · 判断题</b><small>pages/quiz/index · type=judge</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">第 2 / 5 题</div>
+        <span class="streak-badge badge b-streak">🔥 连击 ×1</span>
+      </div>
+      <div class="q-dots"><i class="ok"></i><i class="cur"></i><i></i><i></i><i></i></div>
+      <div class="quiz-meta">
+        <span class="badge b-judge">判断题</span>
+        <span class="badge b-point">知识点：RAG 边界辨析</span>
+        <span class="diff-stars">★<span class="off">★★</span></span>
+      </div>
+      <div class="stem-card">
+        <span class="stem-no">Q2</span>
+        <p>只要接入了大模型（LLM），就等于实现了 RAG。</p>
+      </div>
+      <div class="judge-row">
+        <div class="judge-opt j-yes"><span class="big">✓</span><span class="lbl">正 确</span></div>
+        <div class="judge-opt j-no selected"><span class="big">✗</span><span class="lbl">错 误</span></div>
+      </div>
+      <div class="quiz-foot">
+        <div class="xp-inline"><span>本关已得 ⭐ +14 XP</span><span>直觉很敏锐！</span></div>
+        <button class="btn btn-block">提交答案</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>判断题复用同一套判题与反馈链路，<code>answer</code> 取 <code>["true"] / ["false"]</code>。</li>
+      <li>大按钮双分栏适合单手操作；「对」用蓝墨水色、「错」用红笔色（色彩语义见设计规范 02）。</li>
+      <li>顶部激励文案池（如「直觉很敏锐！」）随状态轮换，营造陪伴感。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S7 答对 · 即时反馈 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S7</span>
+    <div><b>答对 · 即时反馈</b><small>quiz 页内状态 · is_correct=true</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">第 1 / 5 题</div>
+        <span class="streak-badge badge b-streak">🔥 连击 ×1</span>
+      </div>
+      <div class="q-dots"><i class="ok"></i><i></i><i></i><i></i><i></i></div>
+      <div class="quiz-meta">
+        <span class="badge b-single">单选题</span>
+        <span class="badge b-point">知识点：RAG 基础概念</span>
+        <span class="diff-stars">★<span class="off">★★</span></span>
+      </div>
+      <div class="stem-card">
+        <span class="stem-no">Q1</span>
+        <p>RAG 的核心思想，用一句人话概括是什么？</p>
+      </div>
+      <div class="opt correct"><span class="key">A</span><span class="txt">先「翻书检索」，再「照着写答案」</span><span class="mark">✓</span></div>
+      <div class="opt dim"><span class="key">B</span><span class="txt">让 AI 自由发挥，想到哪写到哪</span></div>
+      <div class="opt dim"><span class="key">C</span><span class="txt">把所有资料一次性塞给用户自己看</span></div>
+
+      <div class="fb-sheet">
+        <div class="fb-head">
+          <svg class="mascot m62" viewBox="0 0 180 195"><use href="#mascot-cheer"/></svg>
+          <div class="fb-title ok">
+            <b>答对啦！</b>
+            <small>第 1 题 · 用时 12 秒 · 连击达成，继续冲！</small>
+            <div class="reward-row">
+              <span class="badge b-xp">⭐ +10 XP</span>
+              <span class="badge b-streak">🔥 ×1</span>
+            </div>
+          </div>
+        </div>
+        <div class="fb-body">
+          <div class="explain-card ok">
+            <div class="head"><span class="icon">📖</span><b>老师讲解</b><span class="badge b-point">RAG 基础概念</span></div>
+            <div class="body">RAG = Retrieval-Augmented Generation（检索增强生成）。先从知识库里「翻书」找到相关资料，再让大模型「照着资料」组织答案 —— 相当于开卷考试：答案有出处，不容易一本正经地胡说八道…</div>
+            <span class="fold">展开完整讲解 ▾</span>
+          </div>
+        </div>
+        <button class="btn btn-green btn-block" style="margin-top:12px">继续闯关</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>提交后<b>立即</b>本地判题并弹出反馈抽屉（slide-up 200ms），不等后端（需求 P0-4）。</li>
+      <li>XP 徽章依次 pop 弹出（120ms 级联），答对正反馈拉满。</li>
+      <li>讲解卡可折叠（交互原则 11.5-2），知识点标签与题库字段一致，为错题本归类打底。</li>
+      <li>小智表情切「欢呼」，正向情绪绑定（多邻国式情感界面）。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S8 答错 · 即时反馈 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S8</span>
+    <div><b>答错 · 即时反馈</b><small>quiz 页内状态 · is_correct=false</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">第 3 / 5 题</div>
+      </div>
+      <div class="q-dots"><i class="ok"></i><i class="ok"></i><i class="bad"></i><i></i><i></i></div>
+      <div class="quiz-meta">
+        <span class="badge b-single">单选题</span>
+        <span class="badge b-point">知识点：RAG 基础概念</span>
+        <span class="diff-stars">★★<span class="off">★</span></span>
+      </div>
+      <div class="stem-card">
+        <span class="stem-no">Q3</span>
+        <p>RAG 的英文全称是什么？它所强调的核心思想是？</p>
+      </div>
+      <div class="opt wrong"><span class="key">A</span><span class="txt">Random Answer Generation，随机生成答案</span><span class="mark">✗</span></div>
+      <div class="opt correct"><span class="key">B</span><span class="txt">Retrieval-Augmented Generation，先检索再生成</span><span class="mark">✓</span></div>
+      <div class="opt dim"><span class="key">C</span><span class="txt">Recursive Analysis Grid，递归分析网格</span></div>
+      <div class="opt dim"><span class="key">D</span><span class="txt">Realtime API Gateway，实时接口网关</span></div>
+
+      <div class="fb-sheet">
+        <div class="fb-head">
+          <svg class="mascot m62" viewBox="0 0 180 195"><use href="#mascot-sweat"/></svg>
+          <div class="fb-title bad">
+            <b>差一点！</b>
+            <small>正确答案是 B · 第 3 题 · 别灰心，看看讲解</small>
+            <div class="reward-row">
+              <span class="badge" style="background:#F1ECDD;border-color:#C9C1AF;color:#9A9282">⭐ +0 XP</span>
+              <span class="badge b-streak" style="filter:grayscale(.5)">🔥 连击中断</span>
+            </div>
+          </div>
+        </div>
+        <div class="fb-body">
+          <div class="explain-card bad">
+            <div class="head"><span class="icon">✏️</span><b>错题订正</b><span class="badge b-point">RAG 基础概念</span></div>
+            <div class="body">这道题错得不冤：RAG 的「检索」发生在生成答案<b>之前</b> —— 先查资料再说话；而随机生成（A）恰恰是 RAG 要避免的「幻觉式输出」。记住口诀：<b>先翻书、再回答</b>，这就是 RAG 和普通大模型的本质区别…</div>
+            <span class="fold">展开完整讲解 ▾</span>
+          </div>
+        </div>
+        <button class="btn btn-soft btn-block" style="margin-top:12px">知道了，继续</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>答错<b>同样立即展示</b>深度讲解（需求 P0-4「答错也有知识讲解」）。</li>
+      <li>「安全的失败」三件套：正确项同步标绿、XP 显示 +0 而非扣分红字、按钮用柔和橙底「知道了，继续」。</li>
+      <li>答题进度条照常前进（60%），避免「卡住」的挫败感（借鉴多邻国）。</li>
+      <li>本条作答记录 <code>is_correct=false</code>，通关后计入错题本与艾宾浩斯复习队列（P1 预留）。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S9 通关报告 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S9</span>
+    <div><b>通关报告 · AI 复盘</b><small>pages/report/index</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="report-hero">
+        <svg class="mascot m108" viewBox="0 0 180 195"><use href="#mascot-grad"/></svg>
+        <h2>通 关 ！</h2>
+        <div class="r-topic">RAG 入门闯关 · 5 题 · 难度混合</div>
+      </div>
+
+      <div class="ring-zone">
+        <div class="ring-wrap">
+          <div class="ring">
+            <div class="inner">
+              <div class="num">80<small>%</small></div>
+            </div>
+          </div>
+          <div class="ring-cap">正确率</div>
+        </div>
+        <div class="ring-side">
+          <div class="stat"><span class="ico">✅</span>答对题数<em>4 / 5</em></div>
+          <div class="stat"><span class="ico">⏱️</span>总用时<em>2'18"</em></div>
+          <div class="stat"><span class="ico">⭐</span>本关经验<em>+42 XP</em></div>
+        </div>
+      </div>
+
+      <div class="sum-card">
+        <h3>今日份知识总结</h3>
+        <ol>
+          <li>RAG = 检索增强生成，核心是「先翻书检索、再组织答案」，让回答有据可依。</li>
+          <li>它和大模型的区别：RAG 给模型外挂了一个可随时查阅的知识库，缓解幻觉。</li>
+          <li>典型落地：企业知识库问答、客服机器人、考试真题库等私有数据场景。</li>
+        </ol>
+      </div>
+
+      <div class="pw-grid">
+        <div class="pw-card good">
+          <h3><span class="t-good">✓ 已掌握</span></h3>
+          <ul>
+            <li>RAG 基本定义</li>
+            <li>检索流程顺序</li>
+          </ul>
+        </div>
+        <div class="pw-card bad2">
+          <h3><span class="t-bad">✗ 待加强</span></h3>
+          <ul>
+            <li>RAG 与搜索的边界</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sum-card" style="margin-top:10px">
+        <h3>复盘建议</h3>
+        <ol>
+          <li>「RAG 与搜索的区别」答错了：明天小智会用一道变形题考考你。</li>
+          <li>建议回看第 3 题讲解的「开卷考试」类比，加深印象。</li>
+        </ol>
+      </div>
+
+      <div class="quote-bar">「 把知识做成关卡，记忆会更深。 」</div>
+
+      <div class="report-foot">
+        <button class="btn">生成分享海报</button>
+        <button class="btn btn-ghost">再来一局</button>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>答题结束一次性提交 <code>POST /api/v1/report/generate</code>，本页渲染结构化报告 JSON（方案 10.4）。</li>
+      <li>报告字段：正确率 / 掌握点 / 薄弱点 / 三句总结 / 建议 / 分享金句，与 Prompt 输出 Schema 一一对应。</li>
+      <li>复盘建议第 1 条为 P1「艾宾浩斯旧识重温」埋点文案，后续触发宝藏关卡。</li>
+      <li>正确率环用重字重大数字严格居中呈现 + 绿色语义色，强化「满分卷子上墙」的通关仪式感。</li>
+      <li>v1.2 奖励口径收敛为单一 XP（去掉金币双轨），避免双重计量困惑；环内只留大数字，label 移至环外。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== S10 分享海报 ==================== -->
+<div class="screen-wrap">
+  <div class="phone-label">
+    <span class="no">S10</span>
+    <div><b>分享海报</b><small>pages/report/poster</small></div>
+  </div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="sicons"><svg viewBox="0 0 24 24"><use href="#icon-signal"/></svg><svg viewBox="0 0 24 24"><use href="#icon-battery"/></svg></span></div>
+    <div class="scr no-tab">
+      <div class="quiz-nav">
+        <button class="x-btn">✕</button>
+        <div class="title">我的闯关战绩</div>
+      </div>
+      <div class="poster-stage">
+        <div class="poster">
+          <div class="stamp-round">闯关<br>成功</div>
+          <div class="p-top">
+            <div class="p-logo">智趣 <em>AI</em> 闯关</div>
+            <div class="p-quote">「 把知识做成关卡，<br>记忆会更深。 」</div>
+          </div>
+          <div class="p-body">
+            <div class="p-topic">🎯 RAG 入门闯关 · 5 题</div>
+            <div class="p-acc">80<small>%</small></div>
+            <div class="p-acc-sub">答题正确率 · 用时 2'18"</div>
+            <svg class="mascot m86" viewBox="0 0 180 195"><use href="#mascot-grad"/></svg>
+            <div class="p-code">
+              <div class="qr"></div>
+              <div class="qr-side">扫码和我一起闯关<br>万物皆可闯关 ✏️</div>
+            </div>
+          </div>
+        </div>
+        <div class="poster-ops">
+          <button class="btn btn-ghost">保存海报</button>
+          <button class="btn btn-wx">分享给好友</button>
+        </div>
+      </div>
+    </div>
+    <div class="home-ind"></div>
+  </div>
+  <div class="note-card">
+    <b>✎ 开发标注</b>
+    <ul>
+      <li>海报由 Canvas 拼接生成（需求 P0：学习金句 + 小程序码，<b>无排名</b>信息）。</li>
+      <li>金句取报告 JSON 的 <code>share_quote</code> 字段，主题 / 正确率随战绩动态替换。</li>
+      <li>「分享给好友」走微信转发卡片，「保存海报」请求相册权限并降级提示。</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  智趣 AI 闯关学习小程序 · 核心 MVP 流程高保真原型 v1.2（现代版） ｜ 轻度手绘 ·「作业本上的爆笑课堂」<br>
+  配套文件：<b>01-design-system.html</b> 设计规范 ｜ 本页：S1-S10 完整核心闭环（输入 → 出题 → 答题 → 反馈 → 报告 → 分享）
+</footer>
+</body>
+</html>
