@@ -1,0 +1,7 @@
+/* SVG 小图标统一用背景图渲染（小程序不支持内联 SVG DOM） */
+.icon {
+  flex: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}

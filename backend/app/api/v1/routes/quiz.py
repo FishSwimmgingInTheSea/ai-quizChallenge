@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 
-from app.api.deps import get_quiz_service, get_store
+from app.api.deps import (
+    get_current_user,
+    get_quiz_service,
+    get_record_service,
+    get_store,
+)
 from app.api.response import ok
 from app.core.exceptions import ContentSafetyError, TaskNotFoundError
+from app.db.orm_models import User
 from app.models.quiz import GenerateQuizRequest
+from app.models.user import RecordSubmitRequest
 from app.services.quiz_service import QuizService, build_task_state
+from app.services.record_service import RecordService
 from app.services.task_store import TaskStore
 from app.utils.content_filter import contains_sensitive
 from app.utils.id_generator import new_task_id
@@ -62,3 +70,34 @@ async def generate_sync(
     clean_req = _preprocess(req)
     quiz = await service.generate_quiz_sync(clean_req)
     return ok(quiz.model_dump())
+
+
+@router.post("/records")
+def submit_record(
+    req: RecordSubmitRequest,
+    user: User = Depends(get_current_user),
+    service: RecordService = Depends(get_record_service),
+) -> dict:
+    """通关结算：服务端复算 + 事务写记录 + 原子加 XP，幂等重放不重复加（方案 §7）。"""
+    return ok(service.submit(user.id, req).model_dump())
+
+
+@router.get("/records")
+def list_records(
+    limit: int = Query(default=10, ge=1, le=50, description="每页数量，最大 50"),
+    offset: int = Query(default=0, ge=0),
+    user: User = Depends(get_current_user),
+    service: RecordService = Depends(get_record_service),
+) -> dict:
+    """历史闯关记录列表，created_at 倒序（方案 §8.1）。"""
+    return ok(service.list_records(user.id, limit, offset).model_dump())
+
+
+@router.get("/records/{record_id}")
+def get_record_detail(
+    record_id: int,
+    user: User = Depends(get_current_user),
+    service: RecordService = Depends(get_record_service),
+) -> dict:
+    """单局记录详情：汇总 + 逐题明细 + 复盘报告（仅本人可读，方案 §12.3）。"""
+    return ok(service.get_record_detail(user.id, record_id).model_dump())

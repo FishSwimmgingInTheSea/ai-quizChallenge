@@ -27,6 +27,9 @@ def _build_chat_model(temperature: float) -> ChatOpenAI:
         timeout=settings.llm_timeout,
         max_retries=settings.llm_max_retries,
         top_p=settings.quiz_top_p,
+        # deepseek-flash 默认开启思考模式，与结构化输出的强制 tool_choice 互斥
+        # （400 "Thinking mode does not support this tool_choice"），显式禁用
+        extra_body={"thinking": {"type": settings.deepseek_thinking}},
     )
 
 
@@ -40,6 +43,12 @@ def get_quiz_model() -> ChatOpenAI:
 def get_report_model() -> ChatOpenAI:
     """报告模型（temperature 0.5）。"""
     return _build_chat_model(get_settings().report_temperature)
+
+
+@lru_cache
+def get_research_model() -> ChatOpenAI:
+    """研究模型（quiz-web-search-grounding D9，temperature 取 research_temperature，事实性优先低温）。"""
+    return _build_chat_model(get_settings().research_temperature)
 
 
 def with_structured_output(model: ChatOpenAI, schema: type[BaseModel]) -> Runnable[Any, Any]:

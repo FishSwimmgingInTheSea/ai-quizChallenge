@@ -14,6 +14,12 @@ from app.llm.output_schemas import OptionSchema, QuestionDraft, QuizMetaDraft
 from app.llm.quiz_chain import LangChainQuizGenerator, QuizGenerator
 from app.models.common import Difficulty, QuestionType
 from app.models.quiz import GenerateQuizRequest, Option, Question, Quiz, TaskState
+from app.prompts.quiz_prompt import NO_RESEARCH_CONTEXT
+from app.services.research_service import (
+    ResearchOutcome,
+    ResearchProvider,
+    get_research_service,
+)
 from app.services.task_store import TaskStore
 from app.utils.id_generator import new_quiz_id, question_id
 
@@ -126,23 +132,41 @@ async def _with_retry(
 
 
 class QuizService:
-    """出题服务。生成器通过依赖注入，测试可替换为 mock。"""
+    """出题服务。生成器与研究服务通过依赖注入，测试可替换为 mock。"""
 
     def __init__(
         self,
         generator: QuizGenerator | None = None,
+        research: ResearchProvider | None = None,
         *,
         retry_attempts: int = 3,
     ) -> None:
         self._generator = generator or LangChainQuizGenerator()
+        self._research = research or get_research_service()
         self._retry_attempts = retry_attempts
 
+    async def _run_research(self, user_input: str) -> ResearchOutcome:
+        """出题前联网研究（quiz-web-search-grounding D1）。
+
+        ResearchService 内部保证一切失败路径均降级返回，不抛异常。
+        """
+        outcome = await self._research.research(user_input)
+        if outcome.degraded:
+            logger.info("联网研究降级（%s），回退纯模型出题", outcome.degrade_reason)
+        return outcome
+
+    @staticmethod
+    def _research_context_of(outcome: ResearchOutcome) -> str:
+        """研究产出转为出题资料块；无资料时回退占位文本（D5）。"""
+        text = outcome.context_text.strip()
+        return text if text else NO_RESEARCH_CONTEXT
+
     async def _generate_meta(
-        self, req: GenerateQuizRequest
+        self, req: GenerateQuizRequest, research_context: str
     ) -> QuizMetaDraft:
         return await _with_retry(
             lambda: self._generator.generate_meta(
-                req.user_input, req.question_count, req.difficulty
+                req.user_input, req.question_count, req.difficulty, research_context
             ),
             attempts=self._retry_attempts,
             label="生成题库元信息",
@@ -154,12 +178,18 @@ class QuizService:
         qtype: QuestionType,
         index: int,
         existing_stems: list[str],
+        research_context: str,
     ) -> Question:
         difficulty = resolve_difficulty(req.difficulty, index)
 
         async def _once() -> Question:
             draft = await self._generator.generate_question(
-                req.user_input, qtype, difficulty, index, existing_stems
+                req.user_input,
+                qtype,
+                difficulty,
+                index,
+                existing_stems,
+                research_context,
             )
             validate_question_draft(draft, qtype)
             return draft_to_question(draft, index)
@@ -170,8 +200,10 @@ class QuizService:
 
     async def generate_quiz_sync(self, req: GenerateQuizRequest) -> Quiz:
         """同步一次性生成完整题库（调试接口 /sync 用）。"""
+        outcome = await self._run_research(req.user_input)
+        research_context = self._research_context_of(outcome)
         types = plan_question_types(req.question_count)
-        meta = await self._generate_meta(req)
+        meta = await self._generate_meta(req, research_context)
         quiz = Quiz(
             quiz_id=new_quiz_id(),
             title=meta.title,
@@ -181,7 +213,9 @@ class QuizService:
         )
         stems: list[str] = []
         for idx, qtype in enumerate(types, start=1):
-            question = await self._generate_one(req, qtype, idx, stems)
+            question = await self._generate_one(
+                req, qtype, idx, stems, research_context
+            )
             quiz.questions.append(question)
             stems.append(question.stem)
         return quiz
@@ -189,16 +223,24 @@ class QuizService:
     async def run_generation(
         self, task_id: str, req: GenerateQuizRequest, store: TaskStore
     ) -> None:
-        """后台任务：逐题生成并实时更新任务状态（异步轮询链路）。"""
+        """后台任务：联网研究 → 元信息 → 逐题生成，实时更新任务状态。"""
         types = plan_question_types(req.question_count)
         store.set_status(task_id, "generating")
+        store.set_phase(task_id, "researching")
         try:
-            meta = await self._generate_meta(req)
+            outcome = await self._run_research(req.user_input)
+            research_context = self._research_context_of(outcome)
+            store.set_research_used(task_id, not outcome.degraded)
+            store.set_phase(task_id, "generating")
+
+            meta = await self._generate_meta(req, research_context)
             store.set_meta(task_id, new_quiz_id(), meta.title, meta.summary)
 
             stems: list[str] = []
             for idx, qtype in enumerate(types, start=1):
-                question = await self._generate_one(req, qtype, idx, stems)
+                question = await self._generate_one(
+                    req, qtype, idx, stems, research_context
+                )
                 store.append_question(task_id, question)
                 stems.append(question.stem)
                 # 让出事件循环，便于轮询接口读到中间态

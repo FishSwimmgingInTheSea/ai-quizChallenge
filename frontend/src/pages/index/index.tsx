@@ -3,8 +3,10 @@ import { View, Text, Textarea, Button, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import Mascot from '../../components/Mascot'
 import { INSPIRATIONS } from '../../constants/inspirations'
+import { getQuizRecords, recordToRecentView } from '../../services/api'
 import { getRecentQuizzes, getTotalXp, RecentQuiz } from '../../services/storage'
 import { useQuizStore } from '../../store/quiz'
+import { useUserStore } from '../../store/user'
 import './index.scss'
 
 const MAX_LEN = 100
@@ -12,12 +14,24 @@ const MAX_LEN = 100
 export default function Home() {
   const [value, setValue] = useState('')
   const [recent, setRecent] = useState<RecentQuiz[]>([])
-  const [xp, setXp] = useState(0)
+  const [localXp, setLocalXp] = useState(0)
   const resetSession = useQuizStore((s) => s.resetSession)
+  // XP 徽章：登录态读 user store（服务端权威），匿名读本地（方案 §8.3）
+  const serverXp = useUserStore((s) =>
+    s.isLoggedIn ? s.profile?.total_xp ?? 0 : null,
+  )
+  const xp = serverXp ?? localXp
 
   useDidShow(() => {
-    setRecent(getRecentQuizzes())
-    setXp(getTotalXp())
+    // 回调内用 getState 取实时登录态，避免闭包过期
+    if (useUserStore.getState().isLoggedIn) {
+      getQuizRecords({ limit: 5 })
+        .then((page) => setRecent(page.records.map(recordToRecentView)))
+        .catch(() => setRecent([])) // 网络异常静默空态，不打扰
+    } else {
+      setRecent(getRecentQuizzes())
+      setLocalXp(getTotalXp())
+    }
   })
 
   const go = () => {
@@ -32,7 +46,6 @@ export default function Home() {
 
   return (
     <View className="page home">
-      <View className="safe-top" />
       <ScrollView scrollY className="scr">
         <View className="home-top">
           <Mascot type="wave" size={58} />
@@ -45,7 +58,9 @@ export default function Home() {
             className="paper-input"
             value={value}
             maxlength={MAX_LEN}
-            placeholder={'什么是 RAG？它和传统搜索有什么区别\n一句话、一段话、一个主题都行…'}
+            placeholder={
+              '什么是 RAG？它和传统搜索有什么区别\n一句话、一段话、一个主题都行…\n粘贴网页链接也可以'
+            }
             placeholderClass="paper-ph"
             onInput={(e) => setValue(e.detail.value)}
             autoHeight={false}

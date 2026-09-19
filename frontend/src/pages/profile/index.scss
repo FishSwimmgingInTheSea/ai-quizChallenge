@@ -8,11 +8,54 @@
   .hero-info {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
   }
   .hero-name {
     font-weight: 800;
     font-size: 20px;
+  }
+
+  // 已登录：头像按钮（包 chooseAvatar），清除微信 Button 默认样式
+  .avatar-btn {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+
+    &::after {
+      border: none;
+    }
+  }
+  .avatar-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: #fff;
+  }
+
+  // 昵称行内编辑（已登录）
+  .hero-name-input {
+    font-weight: 800;
+    font-size: 18px;
+    width: 200px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px 10px;
+  }
+
+  // 未登录：登录引导（方案 §6.5，视觉沿用现有风格）
+  .login-hint {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orange-dark);
   }
 
   .stat-row {

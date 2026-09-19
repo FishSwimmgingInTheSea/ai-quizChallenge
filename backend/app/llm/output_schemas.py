@@ -34,6 +34,25 @@ class QuizMetaDraft(BaseModel):
     summary: str = Field(description="题库主题摘要")
 
 
+class ResearchSource(BaseModel):
+    """研究资料来源（quiz-web-search-grounding D3）。"""
+
+    title: str = Field(description="来源页面标题")
+    url: str = Field(description="来源页面 URL")
+
+
+class ResearchSummary(BaseModel):
+    """研究智能体的结构化总结（create_agent 的 response_format 目标）。"""
+
+    topic_domain: str = Field(
+        description="用户主题所属领域的判定与术语含义（领域消歧依据）"
+    )
+    context_digest: str = Field(
+        description="供出题引用的资料要点汇编（核心概念、关键事实、时效信息）"
+    )
+    sources: list[ResearchSource] = Field(description="资料来源列表")
+
+
 class ReportDraft(BaseModel):
     """复盘报告结构化输出。"""
 

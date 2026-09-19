@@ -1,4 +1,5 @@
 .cursor/
+.qoder/
 .DS_Store
 Thumbs.db
 *.log
@@ -13,11 +14,16 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+backend/.tmp/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
 htmlcov/
 .coverage
+
+# 运行时产物：头像上传目录 / SQLite 回退库
+backend/uploads/
+backend/ai_quiz_local.db
 
 # Taro / 小程序
 frontend/dist/

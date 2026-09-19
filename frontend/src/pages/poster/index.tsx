@@ -102,20 +102,9 @@ export default function Poster() {
     })
   }
 
-  const close = () => Taro.navigateBack()
-
   return (
     <View className="page poster-page">
-      <View className="safe-top" />
       <ScrollView scrollY className="scr">
-        <View className="top-nav">
-          <Button className="x-btn" hoverClass="hover" onClick={close}>
-            ✕
-          </Button>
-          <Text className="title">我的闯关战绩</Text>
-          <View className="streak-placeholder" />
-        </View>
-
         <View className="poster-stage">
           <View className="poster">
             <View className="stamp-round">

@@ -50,6 +50,20 @@ class TaskStore:
             if state:
                 state.status = status  # type: ignore[assignment]
 
+    def set_phase(self, task_id: str, phase: str) -> None:
+        """更新生成阶段（researching / generating，D7）。"""
+        with self._lock:
+            state = self._data.get(task_id)
+            if state:
+                state.phase = phase
+
+    def set_research_used(self, task_id: str, used: bool) -> None:
+        """标记是否实际用上联网研究资料（D7）。"""
+        with self._lock:
+            state = self._data.get(task_id)
+            if state:
+                state.research_used = used
+
     def append_question(self, task_id: str, question: Question) -> None:
         with self._lock:
             state = self._data.get(task_id)

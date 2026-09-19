@@ -1,20 +1,29 @@
+import { useState } from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import Mascot from '../../components/Mascot'
+import { login } from '../../services/auth'
 import './index.scss'
 
 export default function Login() {
+  const [logging, setLogging] = useState(false)
   const goHome = () => Taro.switchTab({ url: '/pages/index/index' })
 
-  const wxLogin = () => {
-    // MVP 阶段用户系统后置（方案 §2.3），此处为 Phase 5 预留位
-    Taro.showToast({ title: '登录后置，先逛逛吧～', icon: 'none' })
-    setTimeout(goHome, 800)
+  const wxLogin = async () => {
+    if (logging) return
+    setLogging(true)
+    try {
+      await login()
+      Taro.showToast({ title: '登录成功，开始闯关吧！', icon: 'none' })
+      setTimeout(goHome, 500)
+    } catch (e: any) {
+      Taro.showToast({ title: e?.message || '登录失败，请重试', icon: 'none' })
+      setLogging(false)
+    }
   }
 
   return (
     <View className="page s1">
-      <View className="safe-top" />
       <View className="scr s1-scr">
         <View className="hero">
           <View className="hero-logo">
@@ -38,8 +47,14 @@ export default function Login() {
         </View>
 
         <View className="login-zone">
-          <Button className="btn btn-wx btn-block" hoverClass="hover" onClick={wxLogin}>
-            微信一键登录
+          <Button
+            className="btn btn-wx btn-block"
+            hoverClass="hover"
+            loading={logging}
+            disabled={logging}
+            onClick={wxLogin}
+          >
+            {logging ? '正在登录…' : '微信一键登录'}
           </Button>
           <Text className="skip-link" onClick={goHome}>
             暂不登录，先逛逛

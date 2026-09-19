@@ -1,24 +1,41 @@
-"""FastAPI 应用入口：注册路由、异常处理、CORS。"""
+"""FastAPI 应用入口：注册路由、异常处理、CORS、数据库生命周期。"""
 
 from __future__ import annotations
+
+from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.response import fail
-from app.api.v1.routes import health, quiz, report
+from app.api.v1.routes import auth, health, quiz, report, user
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
+from app.db.session import dispose_engine, init_db
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    # 启动：幂等建表；关闭：释放连接池（用户系统方案设计 §4.1 运行时约定）
+    init_db()
+    yield
+    dispose_engine()
 
 
 def create_app() -> FastAPI:
     setup_logging()
     settings = get_settings()
 
-    app = FastAPI(title="智趣 AI 闯关学习小程序 · 后端", version="0.1.0")
+    app = FastAPI(
+        title="智趣 AI 闯关学习小程序 · 后端",
+        version="0.1.0",
+        lifespan=_lifespan,
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -56,6 +73,13 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix=api_prefix)
     app.include_router(quiz.router, prefix=api_prefix)
     app.include_router(report.router, prefix=api_prefix)
+    app.include_router(auth.router, prefix=api_prefix)
+    app.include_router(user.router, prefix=api_prefix)
+
+    # 头像等静态资源：uploads/ 挂到 /static（用户系统方案设计 §6.3）
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=str(upload_dir)), name="static")
 
     return app
 

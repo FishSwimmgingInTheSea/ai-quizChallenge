@@ -58,6 +58,10 @@ class GenerateTaskResponse(BaseModel):
 class TaskState(BaseModel):
     task_id: str
     status: TaskStatus = "pending"
+    # 生成阶段（quiz-web-search-grounding D7）：researching / generating；空串保持旧语义
+    phase: str = ""
+    # 是否实际用上联网研究资料：null = 研究中/未知
+    research_used: bool | None = None
     generated_count: int = 0
     total: int = 5
     quiz_id: str = ""

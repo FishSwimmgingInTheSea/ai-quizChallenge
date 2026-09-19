@@ -44,3 +44,17 @@ class GenerationError(AppException):
 class ReportGenerationError(AppException):
     code = 5002
     message = "报告生成失败，请稍后重试"
+
+
+class UnauthorizedError(AppException):
+    """未登录 / 登录态缺失或失效（用户系统方案设计 §5.5）。"""
+
+    code = 4010
+    message = "登录已过期，请重新登录"
+
+
+class WechatLoginError(AppException):
+    """微信侧登录失败（code2session 异常等）。"""
+
+    code = 4011
+    message = "微信登录失败，请重试"

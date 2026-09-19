@@ -17,7 +17,11 @@ class QuizGenerator(Protocol):
     """出题生成器协议。"""
 
     async def generate_meta(
-        self, user_input: str, question_count: int, difficulty: str
+        self,
+        user_input: str,
+        question_count: int,
+        difficulty: str,
+        research_context: str,
     ) -> QuizMetaDraft: ...
 
     async def generate_question(
@@ -27,6 +31,7 @@ class QuizGenerator(Protocol):
         difficulty: Difficulty,
         index: int,
         existing_stems: list[str],
+        research_context: str,
     ) -> QuestionDraft: ...
 
 
@@ -41,9 +46,15 @@ class LangChainQuizGenerator:
         )
 
     async def generate_meta(
-        self, user_input: str, question_count: int, difficulty: str
+        self,
+        user_input: str,
+        question_count: int,
+        difficulty: str,
+        research_context: str,
     ) -> QuizMetaDraft:
-        return await self._meta_chain.ainvoke({"user_input": user_input})
+        return await self._meta_chain.ainvoke(
+            {"user_input": user_input, "research_context": research_context}
+        )
 
     async def generate_question(
         self,
@@ -52,6 +63,7 @@ class LangChainQuizGenerator:
         difficulty: Difficulty,
         index: int,
         existing_stems: list[str],
+        research_context: str,
     ) -> QuestionDraft:
         stems_text = (
             "\n".join(f"- {s}" for s in existing_stems) if existing_stems else "（暂无）"
@@ -59,6 +71,7 @@ class LangChainQuizGenerator:
         return await self._question_chain.ainvoke(
             {
                 "user_input": user_input,
+                "research_context": research_context,
                 "question_type": question_type,
                 "difficulty": difficulty,
                 "index": index,

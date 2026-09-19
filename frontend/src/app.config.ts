@@ -14,7 +14,6 @@ export default defineAppConfig({
     navigationBarTitleText: '智趣 AI 闯关',
     navigationBarTextStyle: 'black',
     backgroundColor: '#F4F1EB',
-    navigationStyle: 'custom',
   },
   tabBar: {
     color: '#A9A296',
@@ -25,10 +24,14 @@ export default defineAppConfig({
       {
         pagePath: 'pages/index/index',
         text: '闯关',
+        iconPath: 'assets/tabbar/quiz.png',
+        selectedIconPath: 'assets/tabbar/quiz-active.png',
       },
       {
         pagePath: 'pages/profile/index',
         text: '我的',
+        iconPath: 'assets/tabbar/me.png',
+        selectedIconPath: 'assets/tabbar/me-active.png',
       },
     ],
   },

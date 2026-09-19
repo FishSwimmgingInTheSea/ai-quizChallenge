@@ -9,10 +9,22 @@ import {
 
 const XP_PER_CORRECT = 10
 
+/** UUID v4 风格随机串，不引入额外依赖（用户系统方案设计 §10.5）。 */
+function newClientRecordId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 export interface QuizState {
   // 输入
   userInput: string
   difficulty: DifficultyRequest
+
+  // 本局幂等键：结算接口防重复写入（用户系统方案设计 §7.5）
+  clientRecordId: string
 
   // 任务
   taskId: string
@@ -20,6 +32,8 @@ export interface QuizState {
   title: string
   summary: string
   status: TaskState['status'] | 'idle'
+  /** 生成阶段：researching / generating；空串为旧语义 */
+  phase: string
   generatedCount: number
   total: number
   questions: Question[]
@@ -58,11 +72,13 @@ function judge(question: Question, selected: string[]): boolean {
 export const useQuizStore = create<QuizState>((set, get) => ({
   userInput: '',
   difficulty: 'mixed',
+  clientRecordId: '',
   taskId: '',
   quizId: '',
   title: '',
   summary: '',
   status: 'idle',
+  phase: '',
   generatedCount: 0,
   total: 5,
   questions: [],
@@ -80,11 +96,13 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     set({
       userInput: input,
       difficulty,
+      clientRecordId: newClientRecordId(),
       taskId: '',
       quizId: '',
       title: '',
       summary: '',
       status: 'idle',
+      phase: '',
       generatedCount: 0,
       total: 5,
       questions: [],
@@ -104,6 +122,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   ingestTask: (state) =>
     set({
       status: state.status,
+      phase: state.phase ?? '',
       generatedCount: state.generated_count,
       total: state.total,
       quizId: state.quiz_id,

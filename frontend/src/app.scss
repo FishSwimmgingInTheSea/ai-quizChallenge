@@ -42,6 +42,7 @@ page {
 }
 
 view,
+scroll-view,
 text,
 button,
 textarea,
@@ -49,7 +50,7 @@ input {
   box-sizing: border-box;
 }
 
-/* ---------- 页面根：纸面底 + 顶部安全区 ---------- */
+/* ---------- 页面根：纸面底 ---------- */
 .page {
   min-height: 100vh;
   background: var(--paper);
@@ -57,15 +58,12 @@ input {
   flex-direction: column;
 }
 
-.safe-top {
-  height: env(safe-area-inset-top);
-  min-height: 20px;
-  background: var(--paper);
-}
-
 .scr {
   flex: 1;
   padding: 12px 18px 24px;
+  /* scroll-view 默认 width:100% 且为 content-box，加 padding 会横向溢出屏幕；
+     显式 border-box 保证总宽不超出（Bug 修复 #2） */
+  box-sizing: border-box;
 }
 
 /* ---------- 按钮：按压感只留给实底主按钮 ---------- */

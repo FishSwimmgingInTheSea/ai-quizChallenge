@@ -2,11 +2,20 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 pydantic>=2.7.0
 pydantic-settings>=2.3.0
-langchain>=0.3.0
-langchain-core>=0.3.0
-langchain-openai>=0.2.0
+langchain>=1.0
+langchain-core>=1.0
+langchain-openai>=1.0
+langgraph>=1.0
+# 联网研究：Tavily 官方集成（quiz-web-search-grounding D2/D9，tavily-python 随其引入）
+langchain-tavily>=0.2.0
 structlog>=24.1.0
 python-dotenv>=1.0.0
+
+# 用户系统（方案设计 §4.1）
+sqlalchemy>=2.0
+pymysql>=1.1
+PyJWT>=2.8
+python-multipart>=0.0.9
 
 # 测试
 pytest>=8.2.0

@@ -13,7 +13,11 @@ from app.main import create_app
 from app.services.quiz_service import QuizService
 from app.services.report_service import ReportService
 from app.services.task_store import TaskStore
-from tests.conftest import FakeQuizGenerator, FakeReportGenerator
+from tests.conftest import (
+    FakeQuizGenerator,
+    FakeReportGenerator,
+    FakeResearchService,
+)
 
 
 @pytest.fixture
@@ -21,7 +25,9 @@ def client() -> TestClient:
     app = create_app()
     store = TaskStore(ttl_seconds=300)
     app.dependency_overrides[get_quiz_service] = lambda: QuizService(
-        generator=FakeQuizGenerator()
+        generator=FakeQuizGenerator(),
+        # 注入受控研究 mock：不依赖环境 .env 是否配置 TAVILY_API_KEY
+        research=FakeResearchService(),
     )
     app.dependency_overrides[get_report_service] = lambda: ReportService(
         generator=FakeReportGenerator()
@@ -84,6 +90,10 @@ def test_async_generate_then_poll(client: TestClient):
     assert pbody["data"]["status"] == "done"
     assert pbody["data"]["generated_count"] == 5
     assert pbody["data"]["total"] == 5
+    # 新增阶段字段（quiz-web-search-grounding D7）：任务完成后 phase 回到 generating，
+    # research_used 反映 mock 研究降级；旧前端忽略新字段不受影响
+    assert pbody["data"]["phase"] == "generating"
+    assert pbody["data"]["research_used"] is False
 
 
 def test_poll_unknown_task_returns_4004(client: TestClient):

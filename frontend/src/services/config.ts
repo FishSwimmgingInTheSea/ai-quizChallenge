@@ -6,6 +6,16 @@
 export const API_BASE =
   process.env.TARO_APP_API || 'http://127.0.0.1:8000/api/v1'
 
+/** 服务端根地址（API_BASE 去掉 /api/v1），用于拼接 /static 等静态资源路径 */
+export const SERVER_BASE = API_BASE.replace(/\/api\/v1\/?$/, '')
+
+/** 服务端相对路径（如 /static/avatars/...）转绝对 URL；空值原样返回 */
+export function toAbsoluteUrl(path: string): string {
+  if (!path) return ''
+  if (/^https?:\/\//.test(path)) return path
+  return `${SERVER_BASE}${path}`
+}
+
 /** 轮询间隔与上限（方案 §9.4.3 前端设计） */
 export const POLL_INTERVAL_MS = 1500
 export const POLL_MAX_TIMES = 40 // 40 * 1.5s = 60s 兜底超时

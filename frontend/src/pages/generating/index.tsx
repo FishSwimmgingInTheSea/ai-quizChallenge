@@ -22,6 +22,7 @@ export default function Generating() {
     total,
     generatedCount,
     status,
+    phase,
     questions,
     setTaskId,
     ingestTask,
@@ -69,6 +70,8 @@ export default function Generating() {
 
   const firstReady = generatedCount >= 1
   const pct = total ? Math.round((generatedCount / total) * 100) : 0
+  // 联网检索阶段（quiz-web-search-grounding D8）：气泡切换为检索文案
+  const isResearching = phase === 'researching' && status !== 'done'
 
   const rows = Array.from({ length: total }).map((_, i) => {
     const q = questions[i]
@@ -89,23 +92,23 @@ export default function Generating() {
 
   return (
     <View className="page generating">
-      <View className="safe-top" />
       <ScrollView scrollY className="scr">
-        <View className="gen-top">
-          <Button className="x-btn" hoverClass="hover" onClick={cancel}>
-            ✕
-          </Button>
-          <Text className="gen-title">
-            {failed ? '出题失败了…' : '小智正在出题…'}
-          </Text>
-        </View>
         <View className="topic-chip">主题：{userInput}</View>
 
         <View className="gen-stage">
           <Mascot type="think" size={112} floaty />
           <View className="bubble">
-            小智正在拼命出题…{'\n'}一边出你一边答，
-            <Text className="em">不用干等</Text>！
+            {isResearching ? (
+              <>
+                小智正在全网检索最新资料…{'\n'}拿到最新知识就开始出题，
+                <Text className="em">不用干等</Text>！
+              </>
+            ) : (
+              <>
+                小智正在拼命出题…{'\n'}一边出你一边答，
+                <Text className="em">不用干等</Text>！
+              </>
+            )}
           </View>
         </View>
 

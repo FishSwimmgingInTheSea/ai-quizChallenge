@@ -1,31 +1,44 @@
 .report {
+  /* ---------- 空状态 ---------- */
   .empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 18px;
-    padding-top: 140px;
+    gap: 16px;
+    padding-top: 130px;
   }
   .empty-tip {
     font-size: 14px;
     color: var(--ink-soft);
   }
 
+  /* ---------- 通关贺词 ---------- */
   .report-hero {
     text-align: center;
-    padding: 8px 0 2px;
+    padding: 10px 0 2px;
   }
   .hero-mascot {
     margin: 0 auto;
+  }
+  .hero-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
   }
   .hero-title {
     font-weight: 800;
     font-size: 24px;
     letter-spacing: 3px;
     color: var(--orange-dark);
-    margin-top: 2px;
-    display: block;
+  }
+  .hero-flag.l {
+    transform: rotate(-10deg);
+  }
+  .hero-flag.r {
+    transform: rotate(10deg) scaleX(-1);
   }
   .r-topic {
     font-size: 12px;
@@ -35,81 +48,136 @@
     display: block;
   }
 
-  .ring-zone {
+  /* ---------- 通用小节头：色块图标 + 标题 ---------- */
+  .sec-head {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .sec-ic {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sec-ic.t-yellow { background: var(--yellow-soft); }
+  .sec-ic.t-blue { background: var(--blue-soft); }
+  .sec-ic.t-green { background: var(--green-soft); }
+  .sec-ic.t-red { background: var(--red-soft); }
+  .sec-title {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    color: #33302b;
+  }
+
+  /* ---------- 成绩单（本页唯一 elevated 主卡） ---------- */
+  .score-card {
+    margin-top: 14px;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: var(--r-card);
-    padding: 15px;
-    margin-top: 14px;
+    padding: 13px 15px 15px;
+    box-shadow: var(--shadow-card);
   }
-  .ring-wrap {
-    flex: none;
+  .medal-ic {
+    animation: pop 0.5s ease backwards 0.15s;
+  }
+  .score-chip {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: var(--r-chip);
+  }
+  .score-chip.good { background: var(--green-soft); color: var(--green-dark); }
+  .score-chip.mid { background: var(--orange-soft); color: var(--orange-dark); }
+  .score-chip.low { background: var(--red-soft); color: var(--red-dark); }
+
+  .score-body {
     display: flex;
-    flex-direction: column;
     align-items: center;
+    gap: 16px;
   }
   .ring {
-    width: 118px;
-    height: 118px;
+    flex: none;
+    width: 112px;
+    height: 112px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .ring-inner {
-    width: 90px;
-    height: 90px;
+    width: 86px;
+    height: 86px;
     background: #fff;
     border-radius: 50%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     border: 1px solid #e9e4d8;
   }
   .ring-num {
     font-weight: 800;
-    font-size: 30px;
-    color: var(--green-dark);
+    font-size: 27px;
     line-height: 1;
   }
-  .ring-unit {
-    font-size: 14px;
-  }
+  .ring-num.good { color: var(--green-dark); }
+  .ring-num.mid { color: var(--orange-dark); }
+  .ring-num.low { color: var(--red-dark); }
+  .ring-unit { font-size: 13px; }
   .ring-cap {
-    margin-top: 7px;
-    font-size: 10px;
+    margin-top: 4px;
+    font-size: 9.5px;
     color: var(--ink-soft);
     font-weight: 700;
     letter-spacing: 2px;
   }
-  .ring-side {
+
+  .score-stats {
     flex: 1;
     display: flex;
     flex-direction: column;
   }
-  .ring-side .stat {
+  .stat {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 12px;
     font-weight: 700;
     color: #4a453d;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line-soft);
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line);
   }
-  .ring-side .stat:last-child {
+  .stat:last-child {
     border-bottom: none;
   }
-  .ring-side .stat .val {
+  .stat-ic {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-ic.t-green { background: var(--green-soft); }
+  .stat-ic.t-blue { background: var(--blue-soft); }
+  .stat-ic.t-yellow { background: var(--yellow-soft); }
+  .stat-val {
     margin-left: auto;
     font-weight: 800;
     font-size: 14px;
     color: var(--orange-dark);
   }
 
+  /* ---------- 总结 / 建议卡 ---------- */
   .sum-card {
     margin-top: 12px;
     background: #fff;
@@ -117,25 +185,27 @@
     border-radius: var(--r-card);
     padding: 13px 15px;
   }
-  .card-title {
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    color: #33302b;
-    display: block;
-  }
   .ol .li {
     display: flex;
     gap: 8px;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
+  }
+  .ol .li:last-child {
+    margin-bottom: 0;
   }
   .li-no {
     flex: none;
-    font-weight: 800;
+    width: 17px;
+    height: 17px;
+    margin-top: 1px;
+    border-radius: 6px;
+    background: var(--orange-soft);
     color: var(--orange-dark);
-    font-size: 12.5px;
-    line-height: 1.66;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .li-text {
     font-size: 12.5px;
@@ -144,6 +214,7 @@
     flex: 1;
   }
 
+  /* ---------- 掌握情况：标签 chips ---------- */
   .pw-grid {
     display: flex;
     gap: 10px;
@@ -152,48 +223,59 @@
   .pw-card {
     flex: 1;
     border-radius: 14px;
-    padding: 11px 13px;
+    padding: 11px 12px;
   }
-  .pw-card.good {
-    background: var(--green-soft);
+  .pw-card.good { background: var(--green-soft); }
+  .pw-card.bad2 { background: var(--red-soft); }
+  .pw-card .sec-ic { background: #fff; }
+  .pw-card .sec-title.t-good { color: var(--green-dark); }
+  .pw-card .sec-title.t-bad { color: var(--red-dark); }
+  .pw-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .pw-card.bad2 {
-    background: var(--red-soft);
-  }
-  .pw-title {
+  .pw-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fff;
+    border-radius: var(--r-chip);
+    padding: 3px 9px 3px 6px;
+    font-size: 11px;
     font-weight: 700;
-    font-size: 15px;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    display: block;
-  }
-  .pw-title.t-good {
-    color: var(--green-dark);
-  }
-  .pw-title.t-bad {
-    color: var(--red-dark);
-  }
-  .pw-li {
-    font-size: 12px;
-    line-height: 1.55;
-    margin-bottom: 5px;
-    display: block;
     color: #4a453d;
+    line-height: 1.5;
   }
+  .pw-chip.good { border: 1px solid rgba(40, 164, 97, 0.35); }
+  .pw-chip.bad { border: 1px solid rgba(230, 57, 70, 0.3); }
 
+  /* ---------- 金句便签 ---------- */
   .quote-bar {
     margin-top: 12px;
-    text-align: center;
-    padding: 12px 14px;
     background: var(--yellow-soft);
+    border: 1px dashed rgba(138, 109, 0, 0.3);
     border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    transform: rotate(-0.4deg);
+  }
+  .quote-ic {
+    margin-top: 2px;
+  }
+  .quote-text {
+    flex: 1;
+    text-align: center;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 14px;
     letter-spacing: 0.5px;
     color: #7a5d00;
     line-height: 1.6;
   }
 
+  /* ---------- 底部操作 ---------- */
   .report-foot {
     display: flex;
     gap: 10px;

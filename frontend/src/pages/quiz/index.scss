@@ -1,6 +1,11 @@
 .quiz {
   .streak-badge {
     flex: none;
+  }
+  /* 只让火焰图标摇摆（从底部原点 flicker），徽章整体保持静止 */
+  .streak-badge .flame-ic {
+    display: inline-block;
+    transform-origin: 50% 90%;
     animation: flame 1.6s ease-in-out infinite;
   }
   .streak-placeholder {

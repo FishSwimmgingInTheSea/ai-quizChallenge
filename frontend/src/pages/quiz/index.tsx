@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { View, Text, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import Mascot from '../../components/Mascot'
-import { generateReport } from '../../services/api'
+import { generateReport, submitQuizRecord } from '../../services/api'
 import { startPolling } from '../../services/poll'
 import { addRecentQuiz, addTotalXp } from '../../services/storage'
+import { isLoggedIn } from '../../services/token'
 import { useQuizStore } from '../../store/quiz'
+import { useUserStore } from '../../store/user'
 import { QuestionType } from '../../types'
 import './index.scss'
 
@@ -38,6 +40,7 @@ export default function Quiz() {
     title,
     userInput,
     quizId,
+    clientRecordId,
     toggleSelect,
     submitCurrent,
     goNext,
@@ -56,6 +59,25 @@ export default function Quiz() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 系统导航栏返回保护：答题中误触返回会丢失进度，先弹确认（低版本基础库不支持时静默降级）
+  // 注：微信原生参数名为 msg，Taro 类型声明为 message，两者都传以兼容
+  useEffect(() => {
+    const guardMsg = '答题进度尚未保存，确定要退出吗？'
+    try {
+      const option = { msg: guardMsg, message: guardMsg, fail: () => {} }
+      Taro.enableAlertBeforeUnload(option)
+    } catch {
+      /* noop */
+    }
+    return () => {
+      try {
+        Taro.disableAlertBeforeUnload({ fail: () => {} })
+      } catch {
+        /* noop */
+      }
+    }
+  }, [])
+
   const q = questions[currentIndex]
   const isLast = currentIndex >= total - 1
 
@@ -69,6 +91,11 @@ export default function Quiz() {
       success: (r) => {
         if (r.confirm) {
           stopRef.current?.()
+          try {
+            Taro.disableAlertBeforeUnload({ fail: () => {} })
+          } catch {
+            /* noop */
+          }
           Taro.switchTab({ url: '/pages/index/index' })
         }
       },
@@ -99,15 +126,34 @@ export default function Quiz() {
         share_quote: '把知识做成关卡，记忆会更深。',
       })
     }
-    // 记录到最近闯关 + 累计 XP
-    addRecentQuiz({
-      title: title || userInput.slice(0, 12),
-      count: total,
-      accuracy,
-      stars: Math.max(1, Math.round((accuracy / 100) * 5)),
-      time: '刚刚',
-    })
-    addTotalXp(xp)
+    // 结算分支（用户系统方案设计 §10.5）：登录态走服务端，匿名态维持本地现状
+    if (isLoggedIn()) {
+      try {
+        const result = await submitQuizRecord({
+          client_record_id: clientRecordId,
+          title: title || userInput.slice(0, 12),
+          duration_ms: records.reduce((s, r) => s + r.duration_ms, 0),
+          questions,
+          answer_records: records,
+          // 落库的即用户实际看到的那份报告（AI 生成或本地兜底版）
+          report: useQuizStore.getState().report ?? undefined,
+        })
+        // 覆盖式信任服务端权威 XP（含幂等重放场景）
+        useUserStore.getState().setTotalXp(result.total_xp)
+      } catch {
+        // 同步失败不阻塞看报告，也不回写本地（§7.6：避免两套口径并存）
+        Taro.showToast({ title: '记录同步失败', icon: 'none' })
+      }
+    } else {
+      addRecentQuiz({
+        title: title || userInput.slice(0, 12),
+        count: total,
+        accuracy,
+        stars: Math.max(1, Math.round((accuracy / 100) * 5)),
+        time: '刚刚',
+      })
+      addTotalXp(xp)
+    }
     setFinishing(false)
     Taro.redirectTo({ url: '/pages/report/index' })
   }
@@ -125,7 +171,6 @@ export default function Quiz() {
   if (!q) {
     return (
       <View className="page quiz">
-        <View className="safe-top" />
         <View className="scr waiting">
           <Mascot type="think" size={108} floaty />
           <Text className="waiting-tip">小智还在赶制这道题…马上好！</Text>
@@ -159,7 +204,6 @@ export default function Quiz() {
 
   return (
     <View className="page quiz">
-      <View className="safe-top" />
       <ScrollView scrollY className="scr">
         <View className="top-nav">
           <Button className="x-btn" hoverClass="hover" onClick={confirmExit}>
@@ -169,7 +213,10 @@ export default function Quiz() {
             第 {currentIndex + 1} / {total} 题
           </Text>
           {streak > 0 ? (
-            <View className="badge b-streak streak-badge">🔥 连击 ×{streak}</View>
+            <View className="badge b-streak streak-badge">
+              <Text className="flame-ic">🔥</Text>
+              <Text>连击 ×{streak}</Text>
+            </View>
           ) : (
             <View className="streak-placeholder" />
           )}

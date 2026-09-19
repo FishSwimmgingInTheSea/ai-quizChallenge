@@ -38,6 +38,10 @@ export interface AnswerRecord {
 export interface TaskState {
   task_id: string
   status: TaskStatus
+  /** 生成阶段：researching（联网检索中）/ generating（出题中）；空串为旧语义 */
+  phase?: string
+  /** 是否实际用上联网研究资料：null = 研究中/未知 */
+  research_used?: boolean | null
   generated_count: number
   total: number
   quiz_id: string
@@ -61,4 +65,73 @@ export interface ApiResponse<T> {
   code: number
   message: string
   data: T
+}
+
+// ---------- 用户系统（用户系统方案设计 §6 / §8） ----------
+
+export interface UserProfile {
+  nickname: string
+  avatar_url: string
+  total_xp: number
+}
+
+export interface LoginResult {
+  token: string
+  profile: UserProfile
+}
+
+export interface UserStats {
+  total_count: number
+  avg_accuracy: number
+  total_xp: number
+}
+
+export interface QuizRecordItem {
+  record_id: number
+  title: string
+  question_count: number
+  correct_count: number
+  accuracy: number
+  stars: number
+  xp_earned: number
+  duration_ms: number
+  created_at: string
+}
+
+export interface QuizRecordsPage {
+  total: number
+  records: QuizRecordItem[]
+}
+
+export interface RecordSubmitResult {
+  record_id: number
+  correct_count: number
+  accuracy: number
+  stars: number
+  xp_earned: number
+  total_xp: number
+  duplicated: boolean
+}
+
+/** 单题明细：自包含题快照 + 作答（is_correct 为服务端复算值）。 */
+export interface RecordQuestionItem {
+  question_index: number
+  question_id: string
+  type: QuestionType
+  difficulty: Difficulty
+  knowledge_point: string
+  stem: string
+  options: Option[]
+  answer: string[]
+  explanation: string
+  selected_answers: string[]
+  is_correct: boolean
+  duration_ms: number
+}
+
+/** 单局记录详情：汇总 + 逐题明细 + 复盘报告（无报告时为 null）。 */
+export interface RecordDetail {
+  record: QuizRecordItem
+  questions: RecordQuestionItem[]
+  report: Report | null
 }
