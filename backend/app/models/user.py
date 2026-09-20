@@ -97,6 +97,8 @@ class RecordQuestionItem(BaseModel):
     selected_answers: list[str]
     is_correct: bool
     duration_ms: int
+    # 题目当时保存的配图永久 URL（question-images）；无图时空串
+    image_url: str = ""
 
 
 class RecordDetail(BaseModel):

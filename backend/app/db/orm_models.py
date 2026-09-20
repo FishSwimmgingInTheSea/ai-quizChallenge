@@ -6,12 +6,13 @@ MySQL 无符号精度，同时兼容 SQLite 测试库（方案 §4.5）。
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -19,6 +20,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects import mysql
@@ -132,6 +134,10 @@ class QuizQuestionRecord(Base):
     knowledge_point: Mapped[str] = mapped_column(String(100), nullable=False)
     stem: Mapped[str] = mapped_column(Text(), nullable=False)
     explanation: Mapped[str] = mapped_column(Text(), nullable=False)
+    # 配图永久 URL（question-images）；无图时空串（已有表需手动 ALTER 加列）
+    image_url: Mapped[str] = mapped_column(
+        String(500), nullable=False, default=""
+    )
     # JSON 列：MySQL 原生 JSON，SQLite 退化为 TEXT（读写透明，§4.5 双库约定）
     options: Mapped[list] = mapped_column(JSON(), nullable=False)
     answer: Mapped[list] = mapped_column(JSON(), nullable=False)
@@ -225,4 +231,32 @@ class KbDocument(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+
+class ImageGenUsage(Base):
+    """每人每日生图用量计数（question-images D3）。
+
+    按 (user_id, usage_date) 唯一一行，count 为该自然日已生成配图张数；
+    跨自然日因 usage_date 不同自动开新行，配额自然恢复。唯一约束 +
+    原子自增抵并发超发；跨重启持久（区别于进程内计数）。
+    """
+
+    __tablename__ = "image_gen_usage"
+    __table_args__ = (
+        UniqueConstraint("user_id", "usage_date", name="uq_image_usage_user_date"),
+    )
+
+    id: Mapped[int] = _bigint_pk()
+    user_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(mysql.BIGINT(unsigned=True), "mysql"),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+    # 自然日（按服务器本地日期归属配额）
+    usage_date: Mapped[date] = mapped_column(Date(), nullable=False)
+    count: Mapped[int] = mapped_column(
+        Integer().with_variant(mysql.INTEGER(unsigned=True), "mysql"),
+        nullable=False,
+        default=0,
     )

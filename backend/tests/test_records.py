@@ -598,3 +598,38 @@ def test_record_detail_other_users_record_returns_4001(
         f"/api/v1/quiz/records/{record_id}", headers=auth_header(other_id)
     )
     assert resp.json()["code"] == 4001
+
+
+# ---------- 配图快照落库与详情回读（question-images） ----------
+
+
+def test_submit_persists_and_returns_image_url(
+    record_client: TestClient, user_id: int, db_sessionmaker: sessionmaker
+):
+    questions = make_questions(3)
+    questions[0].image_url = "https://cos.example.com/q1.png"
+    # q2/q3 无图，默认空串
+    answers = make_answers(questions, set())
+    body = submit(
+        record_client, user_id, questions, answers, client_record_id="img-1"
+    )
+    assert body["code"] == 0
+    record_id = body["data"]["record_id"]
+
+    from app.db.orm_models import QuizQuestionRecord
+
+    with db_sessionmaker() as session:
+        items = (
+            session.query(QuizQuestionRecord)
+            .order_by(QuizQuestionRecord.question_index)
+            .all()
+        )
+        assert items[0].image_url == "https://cos.example.com/q1.png"
+        assert items[1].image_url == ""
+
+    resp = record_client.get(
+        f"/api/v1/quiz/records/{record_id}", headers=auth_header(user_id)
+    )
+    qs = resp.json()["data"]["questions"]
+    assert qs[0]["image_url"] == "https://cos.example.com/q1.png"
+    assert qs[1]["image_url"] == ""

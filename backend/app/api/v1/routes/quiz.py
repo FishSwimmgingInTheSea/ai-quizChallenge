@@ -69,7 +69,9 @@ async def generate(
 ) -> dict:
     """提交出题任务，立即返回 task_id（不等待生成完成）。"""
     clean_req = _preprocess(req)
-    user_id = _validate_kb_selection(clean_req, user, kb)
+    _validate_kb_selection(clean_req, user, kb)
+    # 登录即传 user_id：知识库检索与配图配额归属均需要（question-images D9）
+    user_id = user.id if user else None
     task_id = new_task_id()
     state = build_task_state(clean_req, task_id)
     store.create(state)
@@ -100,7 +102,8 @@ async def generate_sync(
 ) -> dict:
     """同步一次性返回完整题库（仅用于后端联调/压测，方案 §9.1 兼容说明）。"""
     clean_req = _preprocess(req)
-    user_id = _validate_kb_selection(clean_req, user, kb)
+    _validate_kb_selection(clean_req, user, kb)
+    user_id = user.id if user else None
     quiz = await service.generate_quiz_sync(clean_req, user_id=user_id)
     return ok(quiz.model_dump())
 

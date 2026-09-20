@@ -86,6 +86,8 @@ class RecordService:
                         explanation=question.explanation,
                         options=[o.model_dump() for o in question.options],
                         answer=question.answer,
+                        # 题目配图快照（question-images）：无图时空串
+                        image_url=question.image_url,
                         selected_answers=selected,
                         # 服务端复算口径（§7.3），忽略前端上报的 is_correct
                         is_correct=judge_answer(question, selected),
@@ -226,6 +228,7 @@ class RecordService:
             selected_answers=it.selected_answers,
             is_correct=it.is_correct,
             duration_ms=it.duration_ms,
+            image_url=it.image_url,
         )
 
     @staticmethod

@@ -92,6 +92,57 @@
     padding: 0 2px;
   }
 
+  .img-sec {
+    margin-top: 12px;
+    background: #fff;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .img-sec-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+  .img-sec-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #4a453d;
+  }
+  .img-sec-tip {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+  .img-switch {
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border-radius: var(--r-chip);
+    background: var(--line);
+    padding: 3px;
+    transition: background 0.2s;
+  }
+  .img-switch.on {
+    background: var(--green);
+  }
+  .img-switch-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+  }
+  .img-switch.on .img-switch-dot {
+    transform: translateX(18px);
+  }
+
   .insp-title {
     font-weight: 700;
     font-size: 15px;
@@ -120,6 +171,26 @@
     flex: 1;
     border-top: 1px solid var(--line);
   }
+  // 小节头色块图标（与报告页 sec-ic 同套路）
+  .sec-ic {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sec-ic.t-orange {
+    background: var(--orange-soft);
+  }
+  .sec-link {
+    order: 2;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange-dark);
+    padding: 2px 4px;
+  }
 
   .recent-empty {
     font-size: 13px;
@@ -140,6 +211,18 @@
     border-radius: 14px;
     padding: 12px 14px;
     margin-bottom: 10px;
+  }
+  // 记录卡leading奖章色块
+  .rc-ic {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: var(--yellow-soft);
+    border: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .recent-card .rc-main {
     flex: 1;
@@ -164,6 +247,10 @@
   }
   .mini-btn {
     flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     font-size: 12px;
     font-weight: 700;
     padding: 7px 14px;

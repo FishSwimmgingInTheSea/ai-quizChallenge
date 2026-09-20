@@ -1,0 +1,154 @@
+.review {
+  /* ---------- 空/加载态 ---------- */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding-top: 130px;
+  }
+  .empty-tip {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- 页头 ---------- */
+  .review-head {
+    padding: 6px 2px 14px;
+  }
+  .review-title {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #33302b;
+    letter-spacing: 0.5px;
+  }
+  .review-sub {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- 单题卡 ---------- */
+  .review-item {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 14px 14px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-card);
+  }
+  .ri-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 12px;
+  }
+  .ri-result {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: var(--r-chip);
+  }
+  .ri-result.ok {
+    background: var(--green-soft);
+    color: var(--green-dark);
+  }
+  .ri-result.bad {
+    background: var(--red-soft);
+    color: var(--red-dark);
+  }
+
+  /* ---------- 选项 ---------- */
+  .ri-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .ri-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+  }
+  .ri-opt .key {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--canvas);
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink-soft);
+  }
+  .ri-opt .txt {
+    flex: 1;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #33302b;
+  }
+  .ri-opt .mark {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .ri-opt.correct {
+    border-color: var(--green);
+    background: var(--green-soft);
+  }
+  .ri-opt.correct .key {
+    background: var(--green);
+    color: #fff;
+  }
+  .ri-opt.correct .mark {
+    color: var(--green-dark);
+  }
+  .ri-opt.wrong {
+    border-color: var(--red);
+    background: var(--red-soft);
+  }
+  .ri-opt.wrong .key {
+    background: var(--red);
+    color: #fff;
+  }
+  .ri-opt.wrong .mark {
+    color: var(--red-dark);
+  }
+
+  /* ---------- 讲解 ---------- */
+  .ri-explain {
+    margin-top: 12px;
+    padding: 11px 13px;
+    border-radius: 12px;
+    background: var(--canvas);
+  }
+  .ri-explain-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .ri-explain-head .icon {
+    font-size: 13px;
+  }
+  .ri-explain-head .h-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #4a453d;
+  }
+  .ri-explain-body {
+    font-size: 13px;
+    line-height: 1.72;
+    color: #4a453d;
+  }
+}

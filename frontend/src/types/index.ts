@@ -17,6 +17,8 @@ export interface Question {
   explanation: string
   knowledge_point: string
   difficulty: Difficulty
+  /** AI 配图永久 URL（question-images）；无图时空串 */
+  image_url?: string
 }
 
 export interface Quiz {
@@ -38,10 +40,12 @@ export interface AnswerRecord {
 export interface TaskState {
   task_id: string
   status: TaskStatus
-  /** 生成阶段：researching（联网检索中）/ generating（出题中）；空串为旧语义 */
+  /** 生成阶段：researching（联网检索中）/ generating（出题中）/ imaging（配图中）；空串为旧语义 */
   phase?: string
   /** 是否实际用上联网研究资料：null = 研究中/未知 */
   research_used?: boolean | null
+  /** 配图降级友好提示（question-images）：未登录/额度用尽等；空串表示无提示 */
+  image_notice?: string
   generated_count: number
   total: number
   quiz_id: string
@@ -127,6 +131,8 @@ export interface RecordQuestionItem {
   selected_answers: string[]
   is_correct: boolean
   duration_ms: number
+  /** 题目当时保存的配图永久 URL（question-images）；无图时空串 */
+  image_url?: string
 }
 
 /** 单局记录详情：汇总 + 逐题明细 + 复盘报告（无报告时为 null）。 */

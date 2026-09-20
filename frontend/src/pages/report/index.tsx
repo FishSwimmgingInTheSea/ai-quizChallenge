@@ -37,6 +37,8 @@ export default function ReportPage() {
 
   const goPoster = () => Taro.navigateTo({ url: '/pages/poster/index' })
   const goHome = () => Taro.switchTab({ url: '/pages/index/index' })
+  // 题目回顾（question-images）：store 已含本局/历史题目（含配图），直接渲染
+  const goReview = () => Taro.navigateTo({ url: '/pages/review/index' })
 
   if (!report) {
     return (
@@ -214,6 +216,11 @@ export default function ReportPage() {
             再来一局
           </Button>
         </View>
+
+        <Button className="btn btn-block btn-ghost review-btn" hoverClass="hover" onClick={goReview}>
+          <Icon name="book" size={15} />
+          回顾题目
+        </Button>
       </ScrollView>
     </View>
   )

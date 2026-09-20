@@ -20,6 +20,7 @@ from app.api.deps import (
 from app.core.security import create_token
 from app.main import create_app
 from app.services.kb_service import KbService
+from app.services.image_service import LOGIN_NOTICE, ImagePlan
 from app.services.quiz_service import QuizService
 from app.services.report_service import ReportService
 from app.services.task_store import TaskStore
@@ -347,3 +348,99 @@ def test_generate_sync_empty_input_with_kb_accepted(kb_env):
     body = resp.json()
     assert body["code"] == 0
     assert len(body["data"]["questions"]) == 5
+
+
+# ---------- 出题配图透传（question-images） ----------
+
+
+class _FakeImageService:
+    """配图服务替身：未登录门禁不通过（对齐真实 ImageService）。"""
+
+    def __init__(self, *, enabled: bool = True, notice: str = "") -> None:
+        self._enabled = enabled
+        self._notice = notice
+        self.calls: list = []
+
+    def plan(self, user_id: int | None) -> ImagePlan:
+        if user_id is None:
+            return ImagePlan(False, LOGIN_NOTICE)
+        return ImagePlan(self._enabled, self._notice)
+
+    async def generate_for_question(self, question, *, user_id):
+        self.calls.append((question.id, user_id))
+        return f"https://cos.example.com/{question.id}.png", None
+
+
+@pytest.fixture
+def img_env(db_sessionmaker: sessionmaker) -> SimpleNamespace:
+    from app.api.deps import get_db
+
+    app = create_app()
+    store = TaskStore(ttl_seconds=300)
+    img = _FakeImageService()
+    app.dependency_overrides[get_quiz_service] = lambda: QuizService(
+        generator=FakeQuizGenerator(),
+        research=FakeResearchService(),
+        image_service=img,
+    )
+    app.dependency_overrides[get_store] = lambda: store
+
+    def override_db():
+        session = db_sessionmaker()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_db
+    return SimpleNamespace(client=TestClient(app), img=img, db=db_sessionmaker)
+
+
+def test_generate_with_images_logged_in_backfills(img_env):
+    uid = make_user(img_env.db)
+    resp = img_env.client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "user_input": "什么是 RAG",
+            "question_count": 3,
+            "generate_images": True,
+        },
+        headers=auth_header(uid),
+    )
+    task_id = resp.json()["data"]["task_id"]
+    poll = img_env.client.get(f"/api/v1/quiz/task/{task_id}").json()
+    assert poll["data"]["status"] == "done"
+    assert poll["data"]["phase"] == "imaging"
+    assert all(q["image_url"] for q in poll["data"]["questions"])
+    # user_id 透传给配图服务（配额归属）
+    assert img_env.img.calls and all(u == uid for _, u in img_env.img.calls)
+
+
+def test_generate_with_images_anonymous_degrades(img_env):
+    resp = img_env.client.post(
+        "/api/v1/quiz/generate",
+        json={
+            "user_input": "什么是 RAG",
+            "question_count": 3,
+            "generate_images": True,
+        },
+    )
+    task_id = resp.json()["data"]["task_id"]
+    poll = img_env.client.get(f"/api/v1/quiz/task/{task_id}").json()
+    # 匿名：正常出题、无图、回写登录提示
+    assert poll["data"]["status"] == "done"
+    assert poll["data"]["image_notice"] == LOGIN_NOTICE
+    assert all(q["image_url"] == "" for q in poll["data"]["questions"])
+    assert img_env.img.calls == []
+
+
+def test_generate_without_images_flag_untouched(img_env):
+    resp = img_env.client.post(
+        "/api/v1/quiz/generate",
+        json={"user_input": "什么是 RAG", "question_count": 3},
+        headers=auth_header(make_user(img_env.db)),
+    )
+    task_id = resp.json()["data"]["task_id"]
+    poll = img_env.client.get(f"/api/v1/quiz/task/{task_id}").json()
+    assert poll["data"]["status"] == "done"
+    assert img_env.img.calls == []

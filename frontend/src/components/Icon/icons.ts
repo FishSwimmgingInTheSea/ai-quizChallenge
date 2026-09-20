@@ -17,6 +17,7 @@ export type IconName =
   | 'poster'
   | 'posterWhite'
   | 'replay'
+  | 'rocketWhite'
 
 const WRAP = (inner: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${inner}</svg>`
@@ -80,6 +81,13 @@ const RAW: Record<IconName, string> = {
   replay: WRAP(`
 <path d="M19.2,12 A7.2,7.2 0 1 1 16.4,6.3" fill="none" stroke="#2E2A26" stroke-width="2.1" stroke-linecap="round"/>
 <path d="M15.9,2.6 L16.5,7 L20.5,5.7 Z" fill="#2E2A26"/>
+`),
+  /* 白描火箭：实底主按钮（橙底白字）专用 */
+  rocketWhite: WRAP(`
+<path d="M12,2.6 C14.5,4.5 15.8,7.3 15.8,10.4 C15.8,12.3 15.3,14.1 14.4,15.7 L9.6,15.7 C8.7,14.1 8.2,12.3 8.2,10.4 C8.2,7.3 9.5,4.5 12,2.6 Z" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linejoin="round"/>
+<circle cx="12" cy="9.4" r="2.2" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
+<path d="M8.2,12.2 L5.6,15 L6,17.5 L8.8,15.5 M15.8,12.2 L18.4,15 L18,17.5 L15.2,15.5" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+<path d="M10.3,18.2 L12,21.4 L13.7,18.2" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
 `),
 }
 

@@ -51,7 +51,7 @@ class TaskStore:
                 state.status = status  # type: ignore[assignment]
 
     def set_phase(self, task_id: str, phase: str) -> None:
-        """更新生成阶段（researching / generating，D7）。"""
+        """更新生成阶段（researching / generating / imaging，D7 + question-images）。"""
         with self._lock:
             state = self._data.get(task_id)
             if state:
@@ -78,6 +78,20 @@ class TaskStore:
                 state.quiz_id = quiz_id
                 state.title = title
                 state.summary = summary
+
+    def set_question_image(self, task_id: str, index: int, url: str) -> None:
+        """回填第 index 题（0-based）的配图永久 URL；index 越界则忽略（question-images）。"""
+        with self._lock:
+            state = self._data.get(task_id)
+            if state and 0 <= index < len(state.questions):
+                state.questions[index].image_url = url
+
+    def set_image_notice(self, task_id: str, notice: str) -> None:
+        """设置配图降级友好提示；空串忽略，且首条优先（已设不覆盖，question-images）。"""
+        with self._lock:
+            state = self._data.get(task_id)
+            if state and notice and not state.image_notice:
+                state.image_notice = notice
 
     def set_error(self, task_id: str, error: str) -> None:
         with self._lock:

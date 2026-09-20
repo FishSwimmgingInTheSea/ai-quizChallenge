@@ -1,9 +1,29 @@
 .profile {
+  /* ---------- 头部卡：暖色渐变 + 圆形涂鸦 ---------- */
+  .hero-card {
+    position: relative;
+    background: linear-gradient(135deg, #fff2eb 0%, #fdf6e3 100%);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    right: -22px;
+    top: -22px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+  }
   .profile-hero {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 10px 4px 6px;
   }
   .hero-info {
     display: flex;
@@ -14,6 +34,14 @@
   .hero-name {
     font-weight: 800;
     font-size: 20px;
+  }
+  .hero-tip {
+    position: relative;
+    z-index: 1;
+    margin-top: 10px;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    font-weight: 600;
   }
 
   // 已登录：头像按钮（包 chooseAvatar），清除微信 Button 默认样式
@@ -33,10 +61,11 @@
     }
   }
   .avatar-img {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    border: 2px solid var(--line);
+    border: 3px solid #fff;
+    box-shadow: var(--shadow-pop);
     background: #fff;
   }
 
@@ -58,6 +87,7 @@
     color: var(--orange-dark);
   }
 
+  /* ---------- 统计：数字在上，图标色块与标签同行 ---------- */
   .stat-row {
     display: flex;
     gap: 10px;
@@ -68,23 +98,105 @@
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 14px;
-    padding: 14px 8px;
+    padding: 12px 8px;
     text-align: center;
   }
   .stat-num {
     font-weight: 800;
-    font-size: 22px;
+    font-size: 20px;
     color: var(--orange-dark);
     display: block;
+  }
+  .stat-label-row {
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .stat-ic {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-ic.t-orange {
+    background: var(--orange-soft);
+  }
+  .stat-ic.t-green {
+    background: var(--green-soft);
+  }
+  .stat-ic.t-yellow {
+    background: var(--yellow-soft);
   }
   .stat-label {
     font-size: 11px;
     color: var(--ink-soft);
     font-weight: 700;
-    display: block;
-    margin-top: 4px;
   }
 
+  /* ---------- 快捷入口：横排 图标 + 文案 + 箭头 ---------- */
+  .act-grid {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .act-tile {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .act-ic {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .act-ic.t-blue {
+    background: var(--blue-soft);
+  }
+  .act-ic.t-orange {
+    background: var(--orange-soft);
+  }
+  .act-txt {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .act-title {
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .act-sub {
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .act-arrow {
+    flex: none;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- 闯关档案：完整历史 + 报告回看 ---------- */
   .sec-mini-title {
     font-weight: 700;
     font-size: 15px;
@@ -98,6 +210,24 @@
     content: '';
     flex: 1;
     border-top: 1px solid var(--line);
+  }
+  .sec-ic {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sec-ic.t-yellow {
+    background: var(--yellow-soft);
+  }
+  .sec-count {
+    order: 2;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 700;
   }
 
   .empty-card {
@@ -120,6 +250,17 @@
     padding: 12px 14px;
     margin-bottom: 10px;
   }
+  .rc-ic {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: var(--yellow-soft);
+    border: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   .rc-main {
     flex: 1;
     min-width: 0;
@@ -133,13 +274,44 @@
     font-size: 11px;
     color: var(--ink-soft);
     display: block;
-    margin-top: 3px;
+    margin: 3px 0;
   }
   .rc-stars {
-    font-size: 12px;
+    font-size: 11.5px;
     color: #c98f00;
     font-weight: 700;
+    display: block;
+  }
+  // 报告回看入口 chip（登录态）
+  .rc-go {
     flex: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    background: var(--blue-soft);
+    padding: 5px 10px;
+    border-radius: var(--r-chip);
+  }
+  .rc-lock {
+    flex: none;
+    width: 52px;
+    font-size: 10px;
+    color: var(--ink-faint);
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: right;
+  }
+  .anon-tip {
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: #fff;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    padding: 8px 12px;
+    line-height: 1.6;
   }
 
   .future-note {
@@ -151,7 +323,16 @@
     padding: 10px 12px;
     line-height: 1.6;
   }
+  .logout-row {
+    margin-top: 16px;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
   .go-btn {
     margin-top: 16px;
+    font-size: 16px;
   }
 }

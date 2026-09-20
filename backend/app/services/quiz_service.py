@@ -22,6 +22,7 @@ from app.services.research_service import (
     ResearchProvider,
     get_research_service,
 )
+from app.services.image_service import get_image_service
 from app.services.task_store import TaskStore
 from app.utils.id_generator import new_quiz_id, question_id
 
@@ -169,10 +170,51 @@ class QuizService:
         research: ResearchProvider | None = None,
         *,
         retry_attempts: int = 3,
+        image_service=None,
     ) -> None:
         self._generator = generator or LangChainQuizGenerator()
         self._research = research or get_research_service()
         self._retry_attempts = retry_attempts
+        # 配图服务（question-images）：惰性——None 时首次用到再取全局单例
+        self._image_service = image_service
+
+    def _resolve_image_plan(
+        self, req: GenerateQuizRequest, user_id: int | None, store: TaskStore, task_id: str
+    ) -> tuple[object | None, bool]:
+        """配图门禁：返回 (image_service, 是否尝试配图)。
+
+        未勾选配图 -> (None, False)；勾选但门禁不通过 -> 写入降级提示并
+        (svc, False)；门禁通过 -> (svc, True)。
+        """
+        if not req.generate_images:
+            return None, False
+        svc = self._image_service or get_image_service()
+        plan = svc.plan(user_id)
+        if not plan.enabled:
+            if plan.notice:
+                store.set_image_notice(task_id, plan.notice)
+            return svc, False
+        return svc, True
+
+    async def _collect_images(
+        self, task_id: str, store: TaskStore, pending: list[tuple[int, "asyncio.Future"]]
+    ) -> None:
+        """统一 await 各题配图任务，回填 image_url 与降级提示。
+
+        单题异常/失败只让该题不带图，不牽连其他题与主流程。
+        """
+        results = await asyncio.gather(
+            *[t for _, t in pending], return_exceptions=True
+        )
+        for (index, _), res in zip(pending, results):
+            if isinstance(res, Exception):
+                logger.warning("第 %d 题配图任务异常（降级不带图）：%s", index, res)
+                continue
+            url, notice = res
+            if url:
+                store.set_question_image(task_id, index, url)
+            if notice:
+                store.set_image_notice(task_id, notice)
 
     async def _run_research(
         self,
@@ -300,6 +342,25 @@ class QuizService:
             )
             quiz.questions.append(question)
             stems.append(question.stem)
+
+        # 配图（question-images）：同步链路直接回填 image_url，门禁不通过则跳过
+        if req.generate_images:
+            svc = self._image_service or get_image_service()
+            if svc.plan(user_id).enabled:
+                results = await asyncio.gather(
+                    *[
+                        svc.generate_for_question(q, user_id=user_id)
+                        for q in quiz.questions
+                    ],
+                    return_exceptions=True,
+                )
+                for q, res in zip(quiz.questions, results):
+                    if isinstance(res, Exception):
+                        logger.warning("配图任务异常（降级不带图）：%s", res)
+                        continue
+                    url, _ = res
+                    if url:
+                        q.image_url = url
         return quiz
 
     async def run_generation(
@@ -311,11 +372,13 @@ class QuizService:
     ) -> None:
         """后台任务：联网研究 → 元信息 → 逐题生成，实时更新任务状态。
 
-        user_id 仅在用户选了知识库文档时由路由层传入（kb-rag）。
+        user_id 由路由层在用户登录时传入：既用于知识库检索（kb-rag），
+        也用于配图门禁与配额归属（question-images D9）。
         """
         types = plan_question_types(req.question_count)
         store.set_status(task_id, "generating")
         store.set_phase(task_id, "researching")
+        pending_images: list[tuple[int, "asyncio.Future"]] = []
         try:
             outcome = await self._run_research(
                 req.user_input, user_id=user_id, kb_doc_ids=req.kb_doc_ids
@@ -328,6 +391,11 @@ class QuizService:
             meta = await self._generate_meta(req, research_context)
             store.set_meta(task_id, new_quiz_id(), meta.title, meta.summary)
 
+            # 配图门禁（question-images）：勾选且门禁通过才逐题并发生图
+            image_svc, image_enabled = self._resolve_image_plan(
+                req, user_id, store, task_id
+            )
+
             stems: list[str] = []
             for idx, qtype in enumerate(types, start=1):
                 question = await self._generate_one(
@@ -335,12 +403,31 @@ class QuizService:
                 )
                 store.append_question(task_id, question)
                 stems.append(question.stem)
+                if image_enabled:
+                    # 题目落库即并发起图，与后续出题重叠以压缩总等待
+                    pending_images.append(
+                        (
+                            idx - 1,
+                            asyncio.create_task(
+                                image_svc.generate_for_question(
+                                    question, user_id=user_id
+                                )
+                            ),
+                        )
+                    )
                 # 让出事件循环，便于轮询接口读到中间态
                 await asyncio.sleep(0)
+
+            if pending_images:
+                store.set_phase(task_id, "imaging")
+                await self._collect_images(task_id, store, pending_images)
 
             store.set_status(task_id, "done")
         except Exception as exc:  # noqa: BLE001
             logger.error("任务 %s 生成失败：%s", task_id, exc)
+            # 出题失败：取消尚未完成的配图任务，避免孤儿任务告警
+            for _, task in pending_images:
+                task.cancel()
             store.set_error(task_id, str(exc))
 
 

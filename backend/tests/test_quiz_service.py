@@ -16,6 +16,7 @@ from app.services.quiz_service import (
     validate_question_draft,
 )
 from app.services.research_service import ResearchOutcome
+from app.services.image_service import LOGIN_NOTICE, QUOTA_NOTICE, ImagePlan
 from app.services.task_store import TaskStore
 from tests.conftest import (
     FakeQuizGenerator,
@@ -373,3 +374,173 @@ async def test_non_empty_input_keeps_user_topic():
     service = QuizService(generator=gen, research=research)
     await service.generate_quiz_sync(GenerateQuizRequest(user_input="学习 RAG"))
     assert gen.meta_inputs[0] == "学习 RAG"
+
+
+# ---------- 出题配图（question-images） ----------
+class FakeImageService:
+    """配图服务替身：plan 门禁 + 逐题 generate_for_question。"""
+
+    def __init__(
+        self,
+        *,
+        enabled: bool = True,
+        notice: str = "",
+        fail_ids: set[str] | None = None,
+        url_notice: str | None = None,
+    ) -> None:
+        self._enabled = enabled
+        self._notice = notice
+        self._fail_ids = set(fail_ids or set())
+        self._url_notice = url_notice
+        self.calls: list = []
+
+    def plan(self, user_id: int | None) -> ImagePlan:
+        return ImagePlan(self._enabled, self._notice)
+
+    async def generate_for_question(self, question, *, user_id):
+        self.calls.append(question)
+        if question.id in self._fail_ids:
+            return None, None
+        if self._url_notice:
+            return None, self._url_notice
+        return f"https://cos.example.com/{question.id}.png", None
+
+
+async def test_run_generation_backfills_images_when_enabled():
+    """勾选配图 + 登录：逐题并发生图，image_url 回填，进入 imaging 阶段。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    store = TaskStore(ttl_seconds=100)
+    req = GenerateQuizRequest(
+        user_input="学习 RAG", question_count=5, generate_images=True
+    )
+    store.create(TaskState(task_id="t1", total=5))
+
+    await service.run_generation("t1", req, store, user_id=1)
+
+    state = store.get("t1")
+    assert state.status == "done"
+    assert state.phase == "imaging"
+    assert len(img.calls) == 5
+    assert all(q.image_url for q in state.questions)
+    assert state.questions[0].image_url == "https://cos.example.com/q1.png"
+    assert state.image_notice == ""
+
+
+async def test_run_generation_single_image_failure_only_affects_that_question():
+    """单题生图失败仅该题不带图，任务仍 done、其余题正常配图。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService(fail_ids={"q2"})
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    store = TaskStore(ttl_seconds=100)
+    req = GenerateQuizRequest(
+        user_input="学习 RAG", question_count=3, generate_images=True
+    )
+    store.create(TaskState(task_id="t1", total=3))
+
+    await service.run_generation("t1", req, store, user_id=1)
+
+    state = store.get("t1")
+    assert state.status == "done"
+    assert state.questions[0].image_url
+    assert state.questions[1].image_url == ""
+    assert state.questions[2].image_url
+
+
+async def test_run_generation_no_images_when_not_requested():
+    """未勾选配图：不触发生图，不进入 imaging 阶段，链路与既有一致。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    store = TaskStore(ttl_seconds=100)
+    req = GenerateQuizRequest(user_input="学习 RAG", question_count=5)
+    store.create(TaskState(task_id="t1", total=5))
+
+    await service.run_generation("t1", req, store, user_id=1)
+
+    state = store.get("t1")
+    assert state.status == "done"
+    assert img.calls == []
+    assert state.phase == "generating"
+    assert all(q.image_url == "" for q in state.questions)
+
+
+async def test_run_generation_anonymous_sets_login_notice():
+    """勾选配图但未登录：门禁不通过，不生图，回写登录提示。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService(enabled=False, notice=LOGIN_NOTICE)
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    store = TaskStore(ttl_seconds=100)
+    req = GenerateQuizRequest(
+        user_input="学习 RAG", question_count=3, generate_images=True
+    )
+    store.create(TaskState(task_id="t1", total=3))
+
+    await service.run_generation("t1", req, store, user_id=None)
+
+    state = store.get("t1")
+    assert state.status == "done"
+    assert img.calls == []
+    assert state.image_notice == LOGIN_NOTICE
+    assert all(q.image_url == "" for q in state.questions)
+
+
+async def test_run_generation_quota_notice_recorded():
+    """额度用尽：生图返回配额提示，题目不带图，image_notice 记录提示。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService(url_notice=QUOTA_NOTICE)
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    store = TaskStore(ttl_seconds=100)
+    req = GenerateQuizRequest(
+        user_input="学习 RAG", question_count=3, generate_images=True
+    )
+    store.create(TaskState(task_id="t1", total=3))
+
+    await service.run_generation("t1", req, store, user_id=1)
+
+    state = store.get("t1")
+    assert state.status == "done"
+    assert state.image_notice == QUOTA_NOTICE
+    assert all(q.image_url == "" for q in state.questions)
+
+
+async def test_generate_quiz_sync_backfills_images():
+    """同步链路勾选配图：回填每题 image_url。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(
+            user_input="学习 RAG", question_count=3, generate_images=True
+        ),
+        user_id=1,
+    )
+    assert len(img.calls) == 3
+    assert all(q.image_url for q in quiz.questions)
+
+
+async def test_generate_quiz_sync_no_images_when_not_requested():
+    """同步链路未勾选配图：不生图。"""
+    gen = FakeQuizGenerator()
+    img = FakeImageService()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), image_service=img
+    )
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(user_input="学习 RAG", question_count=3), user_id=1
+    )
+    assert img.calls == []
+    assert all(q.image_url == "" for q in quiz.questions)

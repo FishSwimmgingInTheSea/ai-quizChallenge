@@ -23,6 +23,8 @@ class Question(BaseModel):
     explanation: str
     knowledge_point: str
     difficulty: Difficulty
+    # 配图永久 URL（question-images）；默认空串保持向后兼容，旧前端忽略即可
+    image_url: str = ""
 
 
 class Quiz(BaseModel):
@@ -52,6 +54,9 @@ class GenerateQuizRequest(BaseModel):
     # 出题引用的知识库文档 id 集合（kb-rag）：非空要求登录且文档属于本人；
     # None / 空 = 不用知识库，链路与原行为完全一致
     kb_doc_ids: list[int] | None = Field(default=None, max_length=10)
+    # 是否为每题生成配图（question-images）：默认关闭；仅登录用户生效，
+    # 关闭或未登录时出题链路与既有行为逐字一致
+    generate_images: bool = False
 
     @model_validator(mode="after")
     def _check_input_or_kb(self) -> "GenerateQuizRequest":
@@ -80,6 +85,9 @@ class TaskState(BaseModel):
     summary: str = ""
     questions: list[Question] = Field(default_factory=list)
     error: str | None = None
+    # 配图降级友好提示（question-images）：未登录/额度用尽/依赖不可用时非空；
+    # 默认空串保持向后兼容
+    image_notice: str = ""
     created_at: float = Field(default_factory=lambda: time.time())
 
     def to_quiz(self, user_input: str = "") -> Quiz:

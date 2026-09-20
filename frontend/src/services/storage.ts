@@ -9,6 +9,8 @@ export interface RecentQuiz {
   accuracy: number
   stars: number
   time: string
+  /** 服务端记录 id（登录态才有）；匿名本地记录为 undefined，无法回看报告 */
+  id?: number
 }
 
 export function getRecentQuizzes(): RecentQuiz[] {

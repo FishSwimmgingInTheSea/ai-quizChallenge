@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/generating/index',
     'pages/quiz/index',
     'pages/report/index',
+    'pages/review/index',
     'pages/poster/index',
     'pages/profile/index',
     'pages/kb/index',

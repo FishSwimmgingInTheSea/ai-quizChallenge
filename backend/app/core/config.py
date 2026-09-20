@@ -70,6 +70,26 @@ class Settings(BaseSettings):
     kb_top_k: int = 4
     kb_top_k_limit: int = 8
 
+    # ===== 题目 AI 配图（question-images） =====
+    # 配图总开关（紧急关断用）；关闭或未配依赖时全链路静默降级为不配图
+    image_gen_enabled: bool = False
+    # 百炼文生图模型与分辨率（qwen-image-2.0 仅支持同步接口）
+    dashscope_image_model: str = "qwen-image-2.0"
+    image_size: str = "512*512"
+    # 每人每日生图张数上限（DB 持久化按用户按自然日计数）
+    image_daily_limit: int = 20
+    # 单张生图 + 下载 + 上传的总超时（秒）
+    image_gen_timeout: int = 30
+    # 生图提示词最大长度（超长截断）
+    image_prompt_max_len: int = 300
+    # 反向提示词（避免出现文字水印、乱码等）
+    image_negative_prompt: str = "文字, 水印, 乱码, 低质量, 模糊"
+    # 腾讯云 COS（公有读桶 + 默认域名）；任一为空 = 配图不可用（静默降级）
+    cos_secret_id: str = ""
+    cos_secret_key: str = ""
+    cos_bucket: str = ""
+    cos_region: str = ""
+
     # 业务参数
     input_min_len: int = 2
     input_max_len: int = 500

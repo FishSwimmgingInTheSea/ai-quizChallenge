@@ -20,12 +20,13 @@ import {
   UserStats,
 } from '../types'
 
-/** 提交出题任务，返回 task_id；kb_doc_ids 为选中的知识库文档（登录有效）。 */
+/** 提交出题任务，返回 task_id；kb_doc_ids 为选中的知识库文档（登录有效）；generate_images 为是否生成配图（登录有效）。 */
 export function submitQuizTask(params: {
   user_input: string
   question_count?: number
   difficulty?: DifficultyRequest
   kb_doc_ids?: number[]
+  generate_images?: boolean
 }): Promise<{ task_id: string; status: string }> {
   return request({
     url: '/quiz/generate',
@@ -201,6 +202,7 @@ export function recordToRecentView(r: QuizRecordItem) {
     accuracy: r.accuracy,
     stars: r.stars,
     time: r.created_at ? r.created_at.slice(5, 16) : '',
+    id: r.record_id,
   }
 }
 

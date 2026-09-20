@@ -17,6 +17,8 @@ from app.core.security import decode_token
 from app.db.orm_models import User
 from app.db.session import get_db
 from app.services.auth_service import AuthService
+from app.services.image_service import ImageService
+from app.services.image_service import get_image_service as _image_service_singleton
 from app.services.kb_service import KbService
 from app.services.kb_store import get_kb_store
 from app.services.quiz_service import QuizService
@@ -30,8 +32,14 @@ _bearer = HTTPBearer(auto_error=False)
 
 
 @lru_cache
+def get_image_service() -> ImageService:
+    """配图服务单例（question-images）：出题服务依赖注入点。"""
+    return _image_service_singleton()
+
+
+@lru_cache
 def get_quiz_service() -> QuizService:
-    return QuizService()
+    return QuizService(image_service=get_image_service())
 
 
 @lru_cache

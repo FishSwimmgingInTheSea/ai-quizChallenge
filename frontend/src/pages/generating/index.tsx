@@ -20,10 +20,12 @@ export default function Generating() {
     userInput,
     difficulty,
     kbDocIds,
+    generateImages,
     total,
     generatedCount,
     status,
     phase,
+    imageNotice,
     questions,
     setTaskId,
     ingestTask,
@@ -44,6 +46,8 @@ export default function Generating() {
         difficulty,
         // 选中知识库文档时随请求携带（后端校验归属与就绪状态）
         ...(kbDocIds.length ? { kb_doc_ids: kbDocIds } : {}),
+        // 勾选配图时随请求携带（后端按登录/配额门禁决定是否生图）
+        ...(generateImages ? { generate_images: true } : {}),
       })
       setTaskId(task_id)
       stopRef.current = startPolling(task_id, {
@@ -76,6 +80,8 @@ export default function Generating() {
   const pct = total ? Math.round((generatedCount / total) * 100) : 0
   // 联网检索阶段（quiz-web-search-grounding D8）：气泡切换为检索文案
   const isResearching = phase === 'researching' && status !== 'done'
+  // 配图阶段（question-images）：题目已出齐，正在逐题生成配图
+  const isImaging = phase === 'imaging' && status !== 'done'
 
   const rows = Array.from({ length: total }).map((_, i) => {
     const q = questions[i]
@@ -102,7 +108,12 @@ export default function Generating() {
         <View className="gen-stage">
           <Mascot type="think" size={112} floaty />
           <View className="bubble">
-            {isResearching ? (
+            {isImaging ? (
+              <>
+                题目已就绪，小智正在为它们画配图…{'\n'}
+                <Text className="em">马上就能开始答题</Text>！
+              </>
+            ) : isResearching ? (
               kbDocIds.length > 0 ? (
                 <>
                   小智正在钻研你选的知识库文档，{'\n'}必要时联网补充，
@@ -158,6 +169,9 @@ export default function Generating() {
               ))}
             </View>
             <View className="gen-tip">首题就绪即可开始答题，后续题目边答边到！</View>
+            {imageNotice ? (
+              <View className="img-notice">🖼️ {imageNotice}</View>
+            ) : null}
           </View>
         )}
 

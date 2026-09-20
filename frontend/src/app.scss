@@ -261,6 +261,14 @@ input {
   letter-spacing: 1px;
 }
 .stem-card .stem-text { font-size: 14px; line-height: 1.7; font-weight: 600; color: #33302B; }
+.stem-card .q-image {
+  display: block;
+  width: 100%;
+  height: 180px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+}
 
 /* ---------- 反馈抽屉 ---------- */
 .fb-sheet {

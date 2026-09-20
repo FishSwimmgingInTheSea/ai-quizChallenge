@@ -55,3 +55,41 @@ def test_ttl_purges_expired():
     # 触发一次带清理的读取
     assert store.get("old") is None
     assert store.size() == 0
+
+
+# ---------- 配图回填与降级提示（question-images） ----------
+def test_set_question_image_回填对应题():
+    store = TaskStore(ttl_seconds=100)
+    store.create(TaskState(task_id="t1", total=5))
+    store.append_question("t1", _question())
+    store.set_question_image("t1", 0, "https://cos/a.png")
+    assert store.get("t1").questions[0].image_url == "https://cos/a.png"
+
+
+def test_set_question_image_越界忽略():
+    store = TaskStore(ttl_seconds=100)
+    store.create(TaskState(task_id="t1", total=5))
+    store.set_question_image("t1", 3, "https://cos/x.png")  # 尚无题目，忽略不报错
+    assert store.get("t1").questions == []
+
+
+def test_set_image_notice_首条优先():
+    store = TaskStore(ttl_seconds=100)
+    store.create(TaskState(task_id="t1", total=5))
+    store.set_image_notice("t1", "第一条提示")
+    store.set_image_notice("t1", "第二条提示")
+    assert store.get("t1").image_notice == "第一条提示"
+
+
+def test_set_image_notice_空串忽略():
+    store = TaskStore(ttl_seconds=100)
+    store.create(TaskState(task_id="t1", total=5))
+    store.set_image_notice("t1", "")
+    assert store.get("t1").image_notice == ""
+
+
+def test_set_phase_支持imaging():
+    store = TaskStore(ttl_seconds=100)
+    store.create(TaskState(task_id="t1", total=5))
+    store.set_phase("t1", "imaging")
+    assert store.get("t1").phase == "imaging"

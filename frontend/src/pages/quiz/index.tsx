@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import Mascot from '../../components/Mascot'
 import { generateReport, submitQuizRecord } from '../../services/api'
@@ -48,7 +48,14 @@ export default function Quiz() {
   } = store
   const [foldOpen, setFoldOpen] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  // 配图加载失败则隐藏（question-images），不影响判题
+  const [imgError, setImgError] = useState(false)
   const stopRef = useRef<(() => void) | null>(null)
+
+  // 切题时重置配图错误态
+  useEffect(() => {
+    setImgError(false)
+  }, [currentIndex])
 
   // 边答边轮询后续题目
   useEffect(() => {
@@ -243,6 +250,14 @@ export default function Quiz() {
         <View className="stem-card">
           <Text className="stem-no">Q{currentIndex + 1}</Text>
           <Text className="stem-text">{q.stem}</Text>
+          {q.image_url && !imgError && (
+            <Image
+              className="q-image"
+              src={q.image_url}
+              mode="aspectFit"
+              onError={() => setImgError(true)}
+            />
+          )}
         </View>
 
         {q.type === 'multiple' && !submitted && (

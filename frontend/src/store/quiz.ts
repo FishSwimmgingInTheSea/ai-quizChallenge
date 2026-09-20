@@ -3,6 +3,7 @@ import {
   AnswerRecord,
   DifficultyRequest,
   Question,
+  RecordDetail,
   Report,
   TaskState,
 } from '../types'
@@ -29,6 +30,9 @@ export interface QuizState {
   kbDocIds: number[]
   kbDocNames: string[]
 
+  // 是否为题目生成配图（question-images）：仅登录有效，随出题请求携带
+  generateImages: boolean
+
   // 本局幂等键：结算接口防重复写入（用户系统方案设计 §7.5）
   clientRecordId: string
 
@@ -38,8 +42,10 @@ export interface QuizState {
   title: string
   summary: string
   status: TaskState['status'] | 'idle'
-  /** 生成阶段：researching / generating；空串为旧语义 */
+  /** 生成阶段：researching / generating / imaging；空串为旧语义 */
   phase: string
+  /** 配图降级友好提示（question-images）：空串表示无提示 */
+  imageNotice: string
   generatedCount: number
   total: number
   questions: Question[]
@@ -64,6 +70,7 @@ export interface QuizState {
     kb?: { docIds: number[]; docNames: string[] },
   ) => void
   setKbSelection: (docIds: number[], docNames: string[]) => void
+  setGenerateImages: (v: boolean) => void
   setTaskId: (taskId: string) => void
   ingestTask: (state: TaskState) => void
   toggleSelect: (key: string) => void
@@ -71,6 +78,8 @@ export interface QuizState {
   goNext: () => void
   startAnswering: () => void
   setReport: (r: Report) => void
+  /** 历史报告回看：用服务端单局详情水合 store，报告页/海报页即可直接渲染 */
+  hydrateRecord: (detail: RecordDetail) => void
 }
 
 function judge(question: Question, selected: string[]): boolean {
@@ -85,6 +94,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   difficulty: 'mixed',
   kbDocIds: [],
   kbDocNames: [],
+  generateImages: false,
   clientRecordId: '',
   taskId: '',
   quizId: '',
@@ -92,6 +102,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   summary: '',
   status: 'idle',
   phase: '',
+  imageNotice: '',
   generatedCount: 0,
   total: 5,
   questions: [],
@@ -118,6 +129,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       summary: '',
       status: 'idle',
       phase: '',
+      imageNotice: '',
       generatedCount: 0,
       total: 5,
       questions: [],
@@ -135,12 +147,15 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   setKbSelection: (docIds, docNames) =>
     set({ kbDocIds: docIds, kbDocNames: docNames }),
 
+  setGenerateImages: (v) => set({ generateImages: v }),
+
   setTaskId: (taskId) => set({ taskId, status: 'pending' }),
 
   ingestTask: (state) =>
     set({
       status: state.status,
       phase: state.phase ?? '',
+      imageNotice: state.image_notice ?? '',
       generatedCount: state.generated_count,
       total: state.total,
       quizId: state.quiz_id,
@@ -206,4 +221,43 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     })),
 
   setReport: (report) => set({ report }),
+
+  hydrateRecord: (detail) =>
+    set({
+      userInput: detail.record.title,
+      title: detail.record.title,
+      summary: '',
+      taskId: '',
+      quizId: '',
+      status: 'idle',
+      phase: '',
+      imageNotice: '',
+      generatedCount: detail.record.question_count,
+      total: detail.record.question_count,
+      questions: detail.questions.map((q) => ({
+        id: q.question_id,
+        type: q.type,
+        stem: q.stem,
+        options: q.options,
+        answer: q.answer,
+        explanation: q.explanation,
+        knowledge_point: q.knowledge_point,
+        difficulty: q.difficulty,
+        image_url: q.image_url ?? '',
+      })),
+      currentIndex: 0,
+      selected: [],
+      submitted: false,
+      lastCorrect: false,
+      records: detail.questions.map((q) => ({
+        question_id: q.question_id,
+        selected_answers: q.selected_answers,
+        is_correct: q.is_correct,
+        duration_ms: q.duration_ms,
+      })),
+      xp: detail.record.xp_earned,
+      streak: 0,
+      questionStartTs: 0,
+      report: detail.report,
+    }),
 }))
