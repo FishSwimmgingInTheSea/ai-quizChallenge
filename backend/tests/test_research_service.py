@@ -6,7 +6,8 @@ import asyncio
 
 from app.core.config import Settings
 from app.llm.output_schemas import ResearchSource, ResearchSummary
-from app.services.research_service import ResearchService
+from app.services.research_service import ResearchService, system_prompt_for
+from tests.conftest import FakeKbStore
 
 
 def make_settings(**overrides) -> Settings:
@@ -54,10 +55,14 @@ def make_summary(digest: str = "要点一；要点二", with_sources: bool = Tru
 
 
 def factory_of(*agents: FakeAgent):
-    """依次返回各 agent 实例（每次 research 消耗一个，与真实工厂一致）。"""
+    """依次返回各 agent 实例（每次 research 消耗一个，与真实工厂一致）。
+
+    接受并记录 kwargs（user_id / kb_doc_ids），供断言服务层向工厂传参。
+    """
     it = iter(agents)
 
-    def factory():
+    def factory(**kwargs):
+        factory.last_kwargs = kwargs
         return next(it)
 
     return factory
@@ -202,3 +207,211 @@ async def test_research_context_truncated():
     outcome = await service.research("超长资料主题")
     assert len(outcome.context_text) <= 6000
     assert "已截断" in outcome.context_text
+
+
+# ---------- 知识库扩展（kb-rag：带参工厂 / 缓存隔离 / 提示词） ----------
+
+
+def make_kb_settings(**overrides) -> Settings:
+    defaults = dict(
+        _env_file=None,
+        tavily_api_key="test-key",
+        research_enabled=True,
+        research_timeout=60,
+        research_cache_ttl_seconds=900,
+        research_context_max_chars=6000,
+        kb_enabled=True,
+        dashscope_api_key="sk-test",
+    )
+    defaults.update(overrides)
+    return Settings(**defaults)
+
+
+async def test_research_with_kb_passes_factory_args():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    factory = factory_of(agent)
+    service = ResearchService(factory, settings=make_kb_settings())
+    outcome = await service.research("员工手册考核", user_id=7, kb_doc_ids=[3])
+    assert outcome.degraded is False
+    # 工厂收到用户与文档集合（用于构建 kb_search 工具）
+    assert factory.last_kwargs == {"user_id": 7, "kb_doc_ids": [3]}
+    # 用户原始输入不变地进入 agent
+    assert agent.payloads[0]["messages"][0][1] == "员工手册考核"
+
+
+async def test_research_without_kb_passes_none_factory_args():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    factory = factory_of(agent)
+    service = ResearchService(factory, settings=make_kb_settings())
+    await service.research("普通主题")
+    # 未选知识库：工厂参数全 None，与原有代码路径一致
+    assert factory.last_kwargs == {"user_id": None, "kb_doc_ids": None}
+
+
+async def test_research_kb_without_tavily_key_still_runs():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(tavily_api_key="")
+    )
+    outcome = await service.research("私有主题", user_id=7, kb_doc_ids=[3])
+    # 无联网 key 但选了知识库：agent 仍构建运行（仅带 kb_search 工具）
+    assert outcome.degraded is False
+    assert agent.calls == 1
+
+
+async def test_research_kb_unavailable_with_web_still_runs():
+    # dashscope 未配但 tavily 有：静默忽略知识库，继续纯联网（降级策略）
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    factory = factory_of(agent)
+    service = ResearchService(
+        factory, settings=make_kb_settings(dashscope_api_key="")
+    )
+    outcome = await service.research("主题", user_id=7, kb_doc_ids=[3])
+    assert outcome.degraded is False
+    assert agent.calls == 1
+    assert factory.last_kwargs == {"user_id": None, "kb_doc_ids": None}
+
+
+async def test_research_kb_disabled_switch_ignores_kb():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    factory = factory_of(agent)
+    service = ResearchService(
+        factory, settings=make_kb_settings(kb_enabled=False)
+    )
+    outcome = await service.research("主题", user_id=7, kb_doc_ids=[3])
+    assert outcome.degraded is False
+    assert factory.last_kwargs == {"user_id": None, "kb_doc_ids": None}
+
+
+async def test_research_kb_without_user_or_providers_degrades():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(
+        factory_of(agent),
+        settings=make_kb_settings(tavily_api_key="", dashscope_api_key=""),
+    )
+    outcome = await service.research("私有主题", user_id=7, kb_doc_ids=[3])
+    # 联网与知识库都不可用：降级且 agent 不被构建
+    assert outcome.degraded is True
+    assert "TAVILY_API_KEY" in outcome.degrade_reason
+    assert agent.calls == 0
+
+
+async def test_research_kb_doc_ids_without_user_ignored():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(tavily_api_key="")
+    )
+    # user_id=None 时无法定位知识库：选择被忽略，与纯联网降级路径一致
+    outcome = await service.research("主题", kb_doc_ids=[3])
+    assert outcome.degraded is True
+    assert agent.calls == 0
+
+
+# ---------- 缓存按 用户/文档集合 隔离 ----------
+async def test_research_cache_scoped_by_user():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(factory_of(agent, agent), settings=make_kb_settings())
+    first = await service.research("同一主题", user_id=1, kb_doc_ids=[2])
+    second = await service.research("同一主题", user_id=9, kb_doc_ids=[2])
+    # 不同用户的知识库内容不同：缓存按 user 维度隔离，各自真实执行
+    assert first.degraded is False and second.degraded is False
+    assert agent.calls == 2
+
+
+async def test_research_cache_scoped_by_kb_doc_ids():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(factory_of(agent, agent), settings=make_kb_settings())
+    await service.research("同一主题", user_id=1, kb_doc_ids=[2])
+    await service.research("同一主题", user_id=1, kb_doc_ids=[2, 5])
+    # 文档集合不同：不共享缓存
+    assert agent.calls == 2
+
+
+async def test_research_cache_hit_same_user_and_docs():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    service = ResearchService(factory_of(agent, agent), settings=make_kb_settings())
+    await service.research("同一主题", user_id=1, kb_doc_ids=[2])
+    outcome = await service.research("同一主题", user_id=1, kb_doc_ids=[2])
+    # 同用户同文档集合：命中缓存
+    assert agent.calls == 1
+    assert outcome.degraded is False
+
+
+# ---------- 系统提示词条件化 ----------
+def test_system_prompt_kb_addendum():
+    base = system_prompt_for(with_kb=False)
+    assert "kb_search" not in base
+    with_kb = system_prompt_for(with_kb=True)
+    assert "kb_search" in with_kb
+    # 原有联网指引完整保留
+    assert with_kb.startswith(base)
+
+
+# ---------- 自动出题（空输入 + 知识库：概览注入 / 降级兜底 / topic 产出） ----------
+
+
+def overview_docs() -> list:
+    from langchain_core.documents import Document
+
+    return [
+        Document(
+            page_content="员工手册第一条：入职培训三天",
+            metadata={"doc_id": 3, "filename": "handbook.txt"},
+        )
+    ]
+
+
+async def test_research_auto_mode_injects_overview_into_agent_message():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    kb = FakeKbStore(sample_docs=overview_docs())
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(), kb_store=kb
+    )
+    outcome = await service.research("", user_id=7, kb_doc_ids=[3])
+
+    assert outcome.degraded is False
+    assert kb.sample_calls == [(7, (3,), 2)]
+    msg = agent.payloads[0]["messages"][0][1]
+    # 文档概览原文与自动出题指令进入用户消息，agent 据此自推主题
+    assert "员工手册第一条" in msg
+    assert "自动出题" in msg
+    # 推断主题随产出返回，供出题 prompt 兜底使用
+    assert outcome.topic == "主题属于 AI 编码智能体领域"
+
+
+async def test_research_auto_mode_empty_overview_degrades_without_agent():
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    kb = FakeKbStore(sample_docs=[])
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(), kb_store=kb
+    )
+    outcome = await service.research("", user_id=7, kb_doc_ids=[3])
+    # 概览为空（文档无 chunks）：降级且 agent 不被构建
+    assert outcome.degraded is True
+    assert "概览" in outcome.degrade_reason
+    assert agent.calls == 0
+
+
+async def test_research_auto_mode_agent_failure_falls_back_to_overview():
+    agent = FakeAgent(error=RuntimeError("mock agent 崩溃"))
+    kb = FakeKbStore(sample_docs=overview_docs())
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(), kb_store=kb
+    )
+    outcome = await service.research("", user_id=7, kb_doc_ids=[3])
+    assert outcome.degraded is True
+    assert "回退文档概览" in outcome.degrade_reason
+    # 出题资料兜底为概览原文：自动出题承诺不落空
+    assert "员工手册第一条" in outcome.context_text
+
+
+async def test_research_non_auto_mode_message_unchanged():
+    # 回归：非空输入时 agent 仍收用户原文，不取概览、不拼指令
+    agent = FakeAgent(response={"structured_response": make_summary()})
+    kb = FakeKbStore(sample_docs=overview_docs())
+    service = ResearchService(
+        factory_of(agent), settings=make_kb_settings(), kb_store=kb
+    )
+    await service.research("员工手册考核", user_id=7, kb_doc_ids=[3])
+    assert agent.payloads[0]["messages"][0][1] == "员工手册考核"
+    assert kb.sample_calls == []

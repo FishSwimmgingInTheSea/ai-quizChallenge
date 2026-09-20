@@ -1,4 +1,4 @@
-"""联网研究工具（quiz-web-search-grounding D2）。
+"""研究工具：联网搜索/抓取 + 私有知识库检索（kb-rag）。
 
 自定义 @tool 包装工具：官方 TavilySearch/TavilyExtract 工具在调用时锁定
 include_answer / include_raw_content，且 max_results / country 不在调用时
@@ -7,11 +7,17 @@ langchain-tavily 自带的 API Wrapper（不依赖 tavily-python，aiohttp 直�
 把上述参数显式暴露进工具 args schema；包装层做双层截断（单源 / 单工具
 输出），实现官方限制防上下文爆炸的等效初衷。工具异常返回降级文本而非
 抛异常，由 agent 自行决定换路或收尾，服务层另有整体降级兜底。
+
+kb_search 为 Agentic RAG 的第三工具：检索用户上传文档的向量库片段，
+按用户 collection + 选中文档集合双重隔离（服务层构建时注入），检索经
+asyncio.to_thread 下放工作线程（内部含远程 embedding 网络调用，避免
+阻塞事件循环）。
 """
 
 from __future__ import annotations
 
-from typing import Literal
+import asyncio
+from typing import TYPE_CHECKING, Literal
 
 from langchain_core.tools import BaseTool, tool
 from langchain_tavily._utilities import (
@@ -22,6 +28,9 @@ from pydantic import Field
 
 from app.core.config import Settings
 from app.core.logging import get_logger
+
+if TYPE_CHECKING:  # 仅类型提示：llm 层不运行时反向依赖 services 层
+    from app.services.kb_store import KbStore
 
 logger = get_logger(__name__)
 
@@ -50,6 +59,10 @@ _SEARCH_UNAVAILABLE = (
 _EXTRACT_UNAVAILABLE = (
     "（网页抓取工具暂时不可用，可能是网络波动或配额限制。"
     "可稍后重试一次；仍失败请基于已有信息直接收尾。）"
+)
+_KB_UNAVAILABLE = (
+    "（知识库检索工具暂时不可用，可能是向量服务波动。"
+    "可稍后重试一次；仍失败请改用 web_search 联网检索或基于已有信息直接收尾。）"
 )
 _TRUNCATED_MARK = "…（内容过长，已截断）"
 
@@ -207,3 +220,71 @@ def build_research_tools(
         return _clip("\n\n".join(sections), output_limit)
 
     return [web_search, web_extract]
+
+
+def build_kb_search_tool(
+    settings: Settings,
+    *,
+    user_id: int,
+    doc_ids: list[int],
+    kb_store: "KbStore",
+) -> BaseTool:
+    """构造 kb_search 私有知识库检索工具（Agentic RAG 第三工具）。
+
+    检索范围在构建期锁定（用户 collection + 选中文档集合双重隔离），
+    agent 只能控制 query 与条数。kb_store 可注入（测试 mock）；正式
+    链路由 research_service 按次构建注入。
+    """
+
+    default_k = settings.kb_top_k
+    k_limit = settings.kb_top_k_limit
+    per_source_limit = settings.research_per_source_max_chars
+    output_limit = settings.research_tool_output_max_chars
+
+    @tool
+    async def kb_search(
+        query: str,
+        k: int = Field(default=default_k, ge=1, le=k_limit),
+    ) -> str:
+        """检索用户上传的私有知识库文档，返回带来源文件名的原文片段。
+
+        参数选择策略（自主判断，不必询问用户）：
+        - 本次用户已选定知识库文档：私有领域资料（企业制度、内部培训、
+          指定教材/题库）联网通常搜不到，应优先用本工具而非 web_search；
+        - query 与文档原文措辞越接近召回越准，可直接用用户输入的核心词，
+          或从已检索片段中提取的关键术语；
+        - 默认条数通常够用；资料不足时增大 k（上限见参数约束）或换关键词重试；
+        - 提示「未检索到」说明选中文档确实没有相关内容，不要换词空转，
+          改用 web_search 补充公开资料。
+
+        Args:
+            query: 检索内容，建议用主题核心词或文档中的关键术语。
+            k: 返回片段条数。
+        """
+        try:
+            # KbStore.search 为同步方法且内部含远程 embedding 网络调用，
+            # 下放工作线程避免阻塞事件循环
+            docs = await asyncio.to_thread(
+                kb_store.search, user_id, query, k=k, doc_ids=list(doc_ids)
+            )
+        except Exception as exc:  # noqa: BLE001 - 工具失败降级为文本，agent 自行决策
+            logger.warning(
+                "kb_search 调用失败（user=%s, doc_ids=%s）：%s", user_id, doc_ids, exc
+            )
+            return _KB_UNAVAILABLE
+
+        sections: list[str] = []
+        for i, doc in enumerate(docs or [], start=1):
+            meta = doc.metadata or {}
+            filename = meta.get("filename") or "（未知文档）"
+            sections.append(
+                f"【片段 {i}】来源：{filename}\n{_clip(doc.page_content, per_source_limit)}"
+            )
+        if not sections:
+            return (
+                f"（未检索到与「{query}」相关的知识库片段。选中文档中可能没有"
+                "这部分内容：可换关键词重试一次，或改用 web_search 检索公开资料。）"
+            )
+        return _clip("\n\n".join(sections), output_limit)
+
+    return kb_search

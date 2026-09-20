@@ -16,6 +16,11 @@ export default function Home() {
   const [recent, setRecent] = useState<RecentQuiz[]>([])
   const [localXp, setLocalXp] = useState(0)
   const resetSession = useQuizStore((s) => s.resetSession)
+  // 知识库选择（kb-rag）：从 kb 页返回后自动同步
+  const kbDocIds = useQuizStore((s) => s.kbDocIds)
+  const kbDocNames = useQuizStore((s) => s.kbDocNames)
+  const setKbSelection = useQuizStore((s) => s.setKbSelection)
+  const isLoggedIn = useUserStore((s) => s.isLoggedIn)
   // XP 徽章：登录态读 user store（服务端权威），匿名读本地（方案 §8.3）
   const serverXp = useUserStore((s) =>
     s.isLoggedIn ? s.profile?.total_xp ?? 0 : null,
@@ -36,12 +41,34 @@ export default function Home() {
 
   const go = () => {
     const input = value.trim()
-    if (input.length < 2) {
+    // 选了知识库文档时允许留空：后端从文档概览自推主题自动出题
+    if (input.length > 0 && input.length < 2) {
       Taro.showToast({ title: '再多写一点点吧～', icon: 'none' })
       return
     }
-    resetSession(input, 'mixed')
+    if (input.length === 0 && kbDocIds.length === 0) {
+      Taro.showToast({ title: '写点想学的内容，或先选知识库文档', icon: 'none' })
+      return
+    }
+    resetSession(input, 'mixed', kbDocIds.length
+      ? { docIds: kbDocIds, docNames: kbDocNames }
+      : undefined)
     Taro.navigateTo({ url: '/pages/generating/index' })
+  }
+
+  const goKbSelect = () => {
+    if (!useUserStore.getState().isLoggedIn) {
+      Taro.navigateTo({ url: '/pages/login/index' })
+      return
+    }
+    Taro.navigateTo({ url: '/pages/kb/index?mode=select' })
+  }
+
+  const removeKbDoc = (idx: number) => {
+    setKbSelection(
+      kbDocIds.filter((_, i) => i !== idx),
+      kbDocNames.filter((_, i) => i !== idx),
+    )
   }
 
   return (
@@ -59,7 +86,9 @@ export default function Home() {
             value={value}
             maxlength={MAX_LEN}
             placeholder={
-              '什么是 RAG？它和传统搜索有什么区别\n一句话、一段话、一个主题都行…\n粘贴网页链接也可以'
+              kbDocNames.length > 0
+                ? '可不填：想考哪部分就写一句\n留空则由小智通读文档自动出题'
+                : '什么是 RAG？它和传统搜索有什么区别\n一句话、一段话、一个主题都行…\n粘贴网页链接也可以'
             }
             placeholderClass="paper-ph"
             onInput={(e) => setValue(e.detail.value)}
@@ -69,6 +98,37 @@ export default function Home() {
             {value.length} / {MAX_LEN}
           </View>
         </View>
+
+        {isLoggedIn && (
+          <View className="kb-sec">
+            <View className="kb-sec-head">
+              <Text className="kb-sec-title">知识库出题</Text>
+              <Text className="kb-sec-link" onClick={goKbSelect}>
+                {kbDocNames.length > 0 ? '修改选择' : '选择文档 ›'}
+              </Text>
+            </View>
+            {kbDocNames.length > 0 ? (
+              <>
+                <View className="kb-sec-chips">
+                  {kbDocNames.map((name, i) => (
+                    <View key={`${kbDocIds[i]}-${name}`} className="kb-chip">
+                      <Text className="kb-chip-name">{name}</Text>
+                      <Text className="kb-chip-x" onClick={() => removeKbDoc(i)}>
+                        ×
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <View className="kb-sec-tip">上方留空 = 按文档内容自动出题</View>
+              </>
+            ) : (
+              <View className="kb-sec-none">
+                不选也行，AI 自由发挥；选了文档，出题只考你的资料
+              </View>
+            )}
+          </View>
+        )}
+
         <Button className="btn btn-block go-btn" hoverClass="hover" onClick={go}>
           GO！开始闯关
         </Button>

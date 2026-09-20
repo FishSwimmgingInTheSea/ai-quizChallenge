@@ -21,9 +21,10 @@ backend/.tmp/
 htmlcov/
 .coverage
 
-# 运行时产物：头像上传目录 / SQLite 回退库
+# 运行时产物：头像上传目录 / SQLite 回退库 / 知识库向量库（Chroma 持久化）
 backend/uploads/
 backend/ai_quiz_local.db
+backend/kb_data/
 
 # Taro / 小程序
 frontend/dist/

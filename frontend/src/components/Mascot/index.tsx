@@ -16,7 +16,7 @@ export default function Mascot({ type, size = 96, className = '', floaty = false
       className={`mascot ${floaty ? 'floaty' : ''} ${className}`}
       style={{
         width: `${size}px`,
-        height: `${(size * 195) / 180}px`,
+        height: `${size}px`,
         backgroundImage: `url("${mascotDataUri(type)}")`,
       }}
     />

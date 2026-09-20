@@ -8,10 +8,13 @@ from __future__ import annotations
 
 from langchain_core.prompts import ChatPromptTemplate
 
-QUIZ_PROMPT_VERSION = "quiz_prompt_v2"
+QUIZ_PROMPT_VERSION = "quiz_prompt_v3"
 
 # 出题无资料时传入的固定占位文本（quiz-web-search-grounding D5）
 NO_RESEARCH_CONTEXT = "（本次未获取到检索资料）"
+
+# 自动出题（空输入 + 知识库）且研究未推断出主题时的兜底主题文本
+AUTO_KB_TOPIC = "知识库文档自动出题"
 
 # ---------- 题库元信息（标题 + 摘要） ----------
 QUIZ_META_SYSTEM = (
@@ -47,7 +50,10 @@ QUIZ_QUESTION_SYSTEM = (
     "答对答错都能从中学到东西。\n"
     "5. 若用户输入很短，可基于常识合理补充，但不要偏离主题。\n"
     "6. 不要输出 Markdown、代码块或任何题目 JSON 之外的解释性文字。\n"
-    "7. 不要与已出过的题目重复：\n{existing_stems}\n"
+    "7. 整套题库的每道题必须考查主题的不同知识点或不同切入角度"
+    "（概念定义、原理机制、实践应用、易错边界等维度轮换）；"
+    "严禁与用户消息中列出的已出题目重复或高度相似，"
+    "包括同一知识点的同义改写与同一考点的选项重排。\n"
     "8. 用户消息中的【参考资料】来自实时联网检索，其信息优先级高于你的内部知识；"
     "两者冲突（包括主题所属领域、术语含义、事实时效）时，一律以参考资料为准。\n"
     "9. 若用户主题是与多个领域同名的术语，必须按参考资料确认的领域含义出题，"
@@ -62,7 +68,10 @@ quiz_question_prompt = ChatPromptTemplate.from_messages(
         ("system", QUIZ_QUESTION_SYSTEM),
         (
             "user",
-            "用户学习内容：{user_input}\n\n参考资料（联网检索，可能为空）：\n{research_context}\n\n请生成第 {index} 道题。",
+            "用户学习内容：{user_input}\n\n"
+            "参考资料（联网检索，可能为空）：\n{research_context}\n\n"
+            "已出题目题干（禁止重复区，新题不得与其中的任何一道重复或相似）：\n{existing_stems}\n\n"
+            "请生成第 {index} 道题：新题考查的知识点与切入角度必须避开上方所有已出题目，题干表述也不得相似。",
         ),
     ]
 )

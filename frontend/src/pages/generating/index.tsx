@@ -4,7 +4,7 @@ import Taro from '@tarojs/taro'
 import Mascot from '../../components/Mascot'
 import { submitQuizTask } from '../../services/api'
 import { startPolling } from '../../services/poll'
-import { useQuizStore } from '../../store/quiz'
+import { AUTO_KB_TOPIC, useQuizStore } from '../../store/quiz'
 import { QuestionType } from '../../types'
 import './index.scss'
 
@@ -19,6 +19,7 @@ export default function Generating() {
   const {
     userInput,
     difficulty,
+    kbDocIds,
     total,
     generatedCount,
     status,
@@ -31,7 +32,8 @@ export default function Generating() {
   const stopRef = useRef<(() => void) | null>(null)
 
   const startTask = async () => {
-    if (!userInput) {
+    // 知识库自动出题：选了文档时允许空输入，主题由后端从文档推断
+    if (!userInput && kbDocIds.length === 0) {
       Taro.navigateBack()
       return
     }
@@ -40,6 +42,8 @@ export default function Generating() {
       const { task_id } = await submitQuizTask({
         user_input: userInput,
         difficulty,
+        // 选中知识库文档时随请求携带（后端校验归属与就绪状态）
+        ...(kbDocIds.length ? { kb_doc_ids: kbDocIds } : {}),
       })
       setTaskId(task_id)
       stopRef.current = startPolling(task_id, {
@@ -93,16 +97,23 @@ export default function Generating() {
   return (
     <View className="page generating">
       <ScrollView scrollY className="scr">
-        <View className="topic-chip">主题：{userInput}</View>
+        <View className="topic-chip">主题：{userInput || AUTO_KB_TOPIC}</View>
 
         <View className="gen-stage">
           <Mascot type="think" size={112} floaty />
           <View className="bubble">
             {isResearching ? (
-              <>
-                小智正在全网检索最新资料…{'\n'}拿到最新知识就开始出题，
-                <Text className="em">不用干等</Text>！
-              </>
+              kbDocIds.length > 0 ? (
+                <>
+                  小智正在钻研你选的知识库文档，{'\n'}必要时联网补充，
+                  <Text className="em">不用干等</Text>！
+                </>
+              ) : (
+                <>
+                  小智正在全网检索最新资料…{'\n'}拿到最新知识就开始出题，
+                  <Text className="em">不用干等</Text>！
+                </>
+              )
             ) : (
               <>
                 小智正在拼命出题…{'\n'}一边出你一边答，

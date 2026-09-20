@@ -135,3 +135,30 @@ export interface RecordDetail {
   questions: RecordQuestionItem[]
   report: Report | null
 }
+
+// ---------- 知识库（kb-rag：用户私有知识库） ----------
+
+/** 文档状态机：上传受理（解析中）/ 就绪可出题 / 解析失败。 */
+export type KbDocStatus = 'processing' | 'ready' | 'failed'
+
+export interface KbDocument {
+  doc_id: number
+  filename: string
+  doc_type: string
+  file_size: number
+  char_count: number
+  chunk_count: number
+  status: KbDocStatus
+  error: string
+  created_at: string
+}
+
+export interface KbDocumentPage {
+  total: number
+  documents: KbDocument[]
+}
+
+export interface KbUploadResult {
+  doc_id: number
+  status: KbDocStatus
+}

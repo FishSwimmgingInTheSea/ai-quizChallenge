@@ -46,6 +46,20 @@ class ReportGenerationError(AppException):
     message = "报告生成失败，请稍后重试"
 
 
+class DocumentParseError(AppException):
+    """知识库文档解析失败（损坏/无文字层/编码不可识别）。"""
+
+    code = 5003
+    message = "文档解析失败，请检查文件后重试"
+
+
+class KbDocumentNotFoundError(AppException):
+    """知识库文档不存在或不属于当前用户。"""
+
+    code = 4004
+    message = "知识库文档不存在"
+
+
 class UnauthorizedError(AppException):
     """未登录 / 登录态缺失或失效（用户系统方案设计 §5.5）。"""
 

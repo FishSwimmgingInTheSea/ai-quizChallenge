@@ -50,12 +50,28 @@ def db_session(db_sessionmaker) -> Session:
         session.close()
 
 
+# 每题考查不同维度（模拟真实出题多样性，也避免 mock 题干彼此仅差序号、
+# 归一化相似度过高而误触发出题服务的查重硬校验）
+_SINGLE_STEMS = (
+    "下列关于该主题核心概念的表述，哪一项是准确的？",
+    "该主题落地实践中，最常见的一个认知误区是什么？",
+    "下列哪一项不属于该主题的典型应用场景？",
+    "关于该主题的底层工作原理，哪个描述最贴近事实？",
+    "以下哪种做法更符合该主题的最佳实践？",
+    "该主题与其最易混淆的相近概念，本质区别在于什么？",
+)
+_MULTIPLE_STEMS = (
+    "以下哪些属于该主题的典型应用场景？（多选）",
+    "下列哪些做法有助于正确运用该主题的知识？（多选）",
+)
+
+
 def make_draft(qtype: QuestionType, index: int) -> QuestionDraft:
     """按题型构造一个合法的题目草稿。"""
     if qtype == "single":
         return QuestionDraft(
             type="single",
-            stem=f"第{index}题：关于该主题，下列说法正确的是？",
+            stem=_SINGLE_STEMS[(index - 1) % len(_SINGLE_STEMS)],
             options=[
                 OptionSchema(key="A", text="正确的说法"),
                 OptionSchema(key="B", text="错误说法一"),
@@ -70,7 +86,7 @@ def make_draft(qtype: QuestionType, index: int) -> QuestionDraft:
     if qtype == "multiple":
         return QuestionDraft(
             type="multiple",
-            stem=f"第{index}题：以下哪些属于典型应用场景？（多选）",
+            stem=_MULTIPLE_STEMS[(index - 1) % len(_MULTIPLE_STEMS)],
             options=[
                 OptionSchema(key="A", text="场景一"),
                 OptionSchema(key="B", text="错误项"),
@@ -84,7 +100,7 @@ def make_draft(qtype: QuestionType, index: int) -> QuestionDraft:
         )
     return QuestionDraft(
         type="judge",
-        stem=f"第{index}题：这个说法是否正确？",
+        stem="这个说法是否符合该主题的客观事实？",
         options=[
             OptionSchema(key="A", text="正确"),
             OptionSchema(key="B", text="错误"),
@@ -102,6 +118,7 @@ class FakeQuizGenerator:
     def __init__(self) -> None:
         self.meta_calls = 0
         self.question_calls = 0
+        self.meta_inputs: list[str] = []
         self.meta_research_contexts: list[str] = []
         self.question_research_contexts: list[str] = []
 
@@ -109,6 +126,7 @@ class FakeQuizGenerator:
         self, user_input: str, question_count: int, difficulty: str, research_context: str
     ) -> QuizMetaDraft:
         self.meta_calls += 1
+        self.meta_inputs.append(user_input)
         self.meta_research_contexts.append(research_context)
         return QuizMetaDraft(title=f"{user_input[:8]} 闯关", summary="围绕该主题的闯关题库")
 
@@ -176,12 +194,39 @@ class FakeResearchService:
     def __init__(self, outcome: ResearchOutcome | None = None) -> None:
         self.calls = 0
         self.inputs: list[str] = []
+        self.call_kwargs: list[dict] = []
         self._outcome = outcome or ResearchOutcome.degraded_with("mock 默认降级")
 
-    async def research(self, user_input: str) -> ResearchOutcome:
+    async def research(
+        self,
+        user_input: str,
+        *,
+        user_id: int | None = None,
+        kb_doc_ids: list[int] | None = None,
+    ) -> ResearchOutcome:
         self.calls += 1
         self.inputs.append(user_input)
+        self.call_kwargs.append({"user_id": user_id, "kb_doc_ids": kb_doc_ids})
         return self._outcome
+
+
+class FakeKbStore:
+    """向量库占位 mock：接口路由层的元数据校验不触达真实 Chroma。"""
+
+    def __init__(self, sample_docs: list | None = None) -> None:
+        self._sample_docs = sample_docs or []
+        self.sample_calls: list[tuple] = []
+
+    def add_chunks(self, *args, **kwargs) -> None: ...
+
+    def search(self, *args, **kwargs) -> list:
+        return []
+
+    def sample(self, user_id: int, doc_ids: list, *, per_doc: int = 2) -> list:
+        self.sample_calls.append((user_id, tuple(doc_ids), per_doc))
+        return list(self._sample_docs)
+
+    def delete_document(self, *args, **kwargs) -> None: ...
 
 
 def make_research_outcome(context_text: str = "") -> ResearchOutcome:

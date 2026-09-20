@@ -26,6 +26,72 @@
     padding: 14px 22px;
   }
 
+  // 知识库选择区（kb-rag）：登录用户可选文档作为出题依据
+  .kb-sec {
+    margin-top: 12px;
+    background: #fff;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    padding: 11px 14px;
+  }
+  .kb-sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .kb-sec-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #4a453d;
+  }
+  .kb-sec-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange-dark);
+    padding: 2px 4px;
+  }
+  .kb-sec-none {
+    margin-top: 7px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+.kb-sec-tip {
+    margin-top: 7px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+  .kb-sec-chips {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .kb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--r-chip);
+  }
+  .kb-chip-name {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kb-chip-x {
+    font-size: 13px;
+    font-weight: 800;
+    padding: 0 2px;
+  }
+
   .insp-title {
     font-weight: 700;
     font-size: 15px;

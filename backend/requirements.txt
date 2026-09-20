@@ -8,6 +8,15 @@ langchain-openai>=1.0
 langgraph>=1.0
 # 联网研究：Tavily 官方集成（quiz-web-search-grounding D2/D9，tavily-python 随其引入）
 langchain-tavily>=0.2.0
+
+# 知识库 RAG：Chroma 向量库 + 文档加载/分块
+# （langchain-community 处于维护模式，仅用其 PyPDFLoader/Docx2txtLoader，
+#   chromadb 1.x 已 Rust 重写，Windows 下全预编译 wheel 无需 C++ 工具链）
+langchain-chroma>=1.1.0
+langchain-community>=0.4.2
+pypdf>=6.0
+docx2txt>=0.9
+
 structlog>=24.1.0
 python-dotenv>=1.0.0
 

@@ -9,6 +9,9 @@ import {
 
 const XP_PER_CORRECT = 10
 
+/** 空输入 + 知识库自动出题的展示主题（与后端 AUTO_KB_TOPIC 文案对齐）。 */
+export const AUTO_KB_TOPIC = '知识库自动出题'
+
 /** UUID v4 风格随机串，不引入额外依赖（用户系统方案设计 §10.5）。 */
 function newClientRecordId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -22,6 +25,9 @@ export interface QuizState {
   // 输入
   userInput: string
   difficulty: DifficultyRequest
+  // 选中的知识库文档（kb-rag）：提交出题时随请求携带；空 = 不用知识库
+  kbDocIds: number[]
+  kbDocNames: string[]
 
   // 本局幂等键：结算接口防重复写入（用户系统方案设计 §7.5）
   clientRecordId: string
@@ -52,7 +58,12 @@ export interface QuizState {
   report: Report | null
 
   // actions
-  resetSession: (input: string, difficulty: DifficultyRequest) => void
+  resetSession: (
+    input: string,
+    difficulty: DifficultyRequest,
+    kb?: { docIds: number[]; docNames: string[] },
+  ) => void
+  setKbSelection: (docIds: number[], docNames: string[]) => void
   setTaskId: (taskId: string) => void
   ingestTask: (state: TaskState) => void
   toggleSelect: (key: string) => void
@@ -72,6 +83,8 @@ function judge(question: Question, selected: string[]): boolean {
 export const useQuizStore = create<QuizState>((set, get) => ({
   userInput: '',
   difficulty: 'mixed',
+  kbDocIds: [],
+  kbDocNames: [],
   clientRecordId: '',
   taskId: '',
   quizId: '',
@@ -92,10 +105,12 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   questionStartTs: 0,
   report: null,
 
-  resetSession: (input, difficulty) =>
+  resetSession: (input, difficulty, kb) =>
     set({
       userInput: input,
       difficulty,
+      kbDocIds: kb?.docIds ?? [],
+      kbDocNames: kb?.docNames ?? [],
       clientRecordId: newClientRecordId(),
       taskId: '',
       quizId: '',
@@ -116,6 +131,9 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       questionStartTs: 0,
       report: null,
     }),
+
+  setKbSelection: (docIds, docNames) =>
+    set({ kbDocIds: docIds, kbDocNames: docNames }),
 
   setTaskId: (taskId) => set({ taskId, status: 'pending' }),
 

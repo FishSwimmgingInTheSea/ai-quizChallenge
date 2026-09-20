@@ -6,7 +6,7 @@ import { generateReport, submitQuizRecord } from '../../services/api'
 import { startPolling } from '../../services/poll'
 import { addRecentQuiz, addTotalXp } from '../../services/storage'
 import { isLoggedIn } from '../../services/token'
-import { useQuizStore } from '../../store/quiz'
+import { AUTO_KB_TOPIC, useQuizStore } from '../../store/quiz'
 import { useUserStore } from '../../store/user'
 import { QuestionType } from '../../types'
 import './index.scss'
@@ -110,7 +110,7 @@ export default function Quiz() {
     try {
       const report = await generateReport({
         quiz_id: quizId || 'quiz_local',
-        topic: title || userInput,
+        topic: title || userInput || AUTO_KB_TOPIC,
         questions,
         answer_records: records,
       })
@@ -131,7 +131,7 @@ export default function Quiz() {
       try {
         const result = await submitQuizRecord({
           client_record_id: clientRecordId,
-          title: title || userInput.slice(0, 12),
+          title: title || userInput.slice(0, 12) || AUTO_KB_TOPIC,
           duration_ms: records.reduce((s, r) => s + r.duration_ms, 0),
           questions,
           answer_records: records,
@@ -146,7 +146,7 @@ export default function Quiz() {
       }
     } else {
       addRecentQuiz({
-        title: title || userInput.slice(0, 12),
+        title: title || userInput.slice(0, 12) || AUTO_KB_TOPIC,
         count: total,
         accuracy,
         stars: Math.max(1, Math.round((accuracy / 100) * 5)),

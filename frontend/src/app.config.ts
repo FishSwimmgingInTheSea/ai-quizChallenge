@@ -7,6 +7,7 @@ export default defineAppConfig({
     'pages/report/index',
     'pages/poster/index',
     'pages/profile/index',
+    'pages/kb/index',
   ],
   window: {
     backgroundTextStyle: 'dark',

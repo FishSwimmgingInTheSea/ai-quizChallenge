@@ -12,7 +12,7 @@ from app.prompts.report_prompt import REPORT_PROMPT_VERSION, report_prompt
 
 
 def test_quiz_prompt_versions_present():
-    assert QUIZ_PROMPT_VERSION == "quiz_prompt_v2"
+    assert QUIZ_PROMPT_VERSION == "quiz_prompt_v3"
     assert REPORT_PROMPT_VERSION == "report_prompt_v1"
 
 
@@ -46,13 +46,31 @@ def test_quiz_question_prompt_formats_without_error():
         research_context=NO_RESEARCH_CONTEXT,
         question_type="single",
         difficulty="easy",
-        index=1,
-        existing_stems="（暂无）",
+        index=2,
+        existing_stems="- 第 1 题：RAG 的基本流程是什么？",
     )
     # system + user 两条消息
     assert len(msgs) == 2
     assert "single" in msgs[0].content
     assert "参考资料" in msgs[1].content
+
+
+def test_quiz_question_prompt_dedup_zone_in_user_message():
+    # v3：已出题目移入 user 消息的禁止重复区（system 弱位置的指令实测会被模型忽略）
+    msgs = quiz_question_prompt.format_messages(
+        user_input="学习 RAG",
+        research_context=NO_RESEARCH_CONTEXT,
+        question_type="single",
+        difficulty="easy",
+        index=2,
+        existing_stems="- 第 1 题：RAG 的基本流程是什么？",
+    )
+    assert "禁止重复区" in msgs[1].content
+    assert "RAG 的基本流程" in msgs[1].content
+    assert "必须避开" in msgs[1].content
+    # system 不再内嵌题目清单（改为多样性总则）
+    assert "RAG 的基本流程" not in msgs[0].content
+    assert "维度轮换" in msgs[0].content
 
 
 def test_quiz_question_system_has_research_priority_rules():

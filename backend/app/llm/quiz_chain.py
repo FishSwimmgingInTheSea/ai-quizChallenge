@@ -66,7 +66,9 @@ class LangChainQuizGenerator:
         research_context: str,
     ) -> QuestionDraft:
         stems_text = (
-            "\n".join(f"- {s}" for s in existing_stems) if existing_stems else "（暂无）"
+            "\n".join(f"- {s}" for s in existing_stems)
+            if existing_stems
+            else "（暂无：这是本套题库的第 1 道题）"
         )
         return await self._question_chain.ainvoke(
             {

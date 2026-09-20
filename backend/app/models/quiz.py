@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.common import Difficulty, DifficultyRequest, QuestionType, TaskStatus
 
@@ -45,9 +45,20 @@ class AnswerRecord(BaseModel):
 
 
 class GenerateQuizRequest(BaseModel):
-    user_input: str
+    # 空串 = 知识库自动出题：由研究智能体从选中文档推断主题（须选知识库文档）
+    user_input: str = ""
     question_count: int = 5
     difficulty: DifficultyRequest = "mixed"
+    # 出题引用的知识库文档 id 集合（kb-rag）：非空要求登录且文档属于本人；
+    # None / 空 = 不用知识库，链路与原行为完全一致
+    kb_doc_ids: list[int] | None = Field(default=None, max_length=10)
+
+    @model_validator(mode="after")
+    def _check_input_or_kb(self) -> "GenerateQuizRequest":
+        """输入与知识库至少占其一：空输入未选文档时无从出题。"""
+        if not self.user_input.strip() and not self.kb_doc_ids:
+            raise ValueError("user_input 为空时必须选择知识库文档（自动出题）")
+        return self
 
 
 class GenerateTaskResponse(BaseModel):

@@ -5,6 +5,8 @@ import { getToken } from './token'
 import {
   AnswerRecord,
   DifficultyRequest,
+  KbDocumentPage,
+  KbUploadResult,
   LoginResult,
   Question,
   Quiz,
@@ -18,11 +20,12 @@ import {
   UserStats,
 } from '../types'
 
-/** 提交出题任务，返回 task_id。 */
+/** 提交出题任务，返回 task_id；kb_doc_ids 为选中的知识库文档（登录有效）。 */
 export function submitQuizTask(params: {
   user_input: string
   question_count?: number
   difficulty?: DifficultyRequest
+  kb_doc_ids?: number[]
 }): Promise<{ task_id: string; status: string }> {
   return request({
     url: '/quiz/generate',
@@ -140,6 +143,54 @@ export function getQuizRecords(params: {
 /** 基础统计：闯关次数 / 平均正确率 / 累计 XP。 */
 export function getUserStats(): Promise<UserStats> {
   return request({ url: '/user/stats', method: 'GET' })
+}
+
+// ---------- 知识库（kb-rag：用户私有知识库） ----------
+
+/** 知识库文档列表（登录，created_at 倒序，limit/offset 分页）。 */
+export function getKbDocuments(params: {
+  limit?: number
+  offset?: number
+} = {}): Promise<KbDocumentPage> {
+  return request({
+    url: `/kb/documents?limit=${params.limit ?? 20}&offset=${params.offset ?? 0}`,
+    method: 'GET',
+  })
+}
+
+/** 上传知识库文档（pdf / docx / md / txt，≤10MB），受理后后台解析向量化。 */
+export async function uploadKbDocument(
+  filePath: string,
+): Promise<KbUploadResult> {
+  const token = getToken()
+  const header: Record<string, string> = {}
+  if (token) {
+    header.Authorization = `Bearer ${token}`
+  }
+  const res = await Taro.uploadFile({
+    url: `${API_BASE}/kb/documents`,
+    filePath,
+    name: 'file',
+    header,
+  })
+  if (res.statusCode >= 500) {
+    throw new Error('服务器开小差了，请稍后重试')
+  }
+  let body: { code: number; message?: string; data?: KbUploadResult }
+  try {
+    body = JSON.parse(res.data)
+  } catch {
+    throw new Error('上传失败，请重试')
+  }
+  if (body.code !== 0 || !body.data?.doc_id) {
+    throw new Error(body.message || '上传失败，请重试')
+  }
+  return body.data
+}
+
+/** 删除知识库文档（向量 + 原始文件 + 记录一并清理）。 */
+export function deleteKbDocument(docId: number): Promise<null> {
+  return request({ url: `/kb/documents/${docId}`, method: 'DELETE' })
 }
 
 /** 服务端历史记录 -> 页面展示视图（首页/我的共用，对齐本地 RecentQuiz 结构，方案 §8.1）。 */

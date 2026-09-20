@@ -284,17 +284,23 @@ main { max-width: 1240px; margin: 0 auto; }
 .bubble em { font-style: normal; color: var(--orange); }
 
 /* ---------- 小智表情包 ---------- */
-.mascot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
-@media (max-width: 1080px) { .mascot-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 720px) { .mascot-grid { grid-template-columns: repeat(2, 1fr); } }
+#mascots { scroll-margin-top: 24px; }
+.mascot-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .mascot-card {
-  background: #fff; border: 1px solid var(--line); border-radius: 14px;
-  padding: 13px 12px 12px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0; background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  padding: 16px 12px 18px; text-align: center;
 }
-.mascot-card svg { width: 100%; max-width: 120px; height: auto; }
-.mascot-card b { display: block; font-weight: 700; font-size: 16px; margin-top: 8px; letter-spacing: .5px; }
-.mascot-card small { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
-.mascot-card .use { margin-top: 8px; font-size: 11px; color: var(--green-dark); font-weight: 700; background: var(--green-soft); border-radius: var(--r-chip); padding: 3px 10px; display: inline-block; }
+.mascot-card svg { display: block; width: 100%; max-width: 176px; height: auto; aspect-ratio: 1; }
+.mascot-card b { display: block; font-weight: 700; font-size: 16px; margin-top: 10px; letter-spacing: .5px; }
+.mascot-card small { display: block; min-height: 38px; font-size: 12px; color: #746A62; margin: 6px 0 12px; line-height: 1.6; }
+.mascot-card .use { margin-top: auto; max-width: 100%; font-size: 11px; color: #746A62; font-weight: 600; background: var(--paper); border-radius: var(--r-chip); padding: 4px 10px; }
+@media (max-width: 1080px) { .mascot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .mascot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .mascot-card { padding: 12px 8px 16px; }
+  .mascot-card b { font-size: 15px; }
+}
 
 /* ---------- 规范表 ---------- */
 .spec-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
@@ -317,6 +323,147 @@ footer {
 </style>
 </head>
 <body>
+
+<!-- 小智重绘：共用角色轮廓，表情和肢体独立组合，所有图形均为内联矢量。 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute; overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="xz-body" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M86 187 L102 188 L102 201 L80 201 Q77 194 86 187Z" fill="#FFFDFC"/>
+      <path d="M118 188 L134 187 Q143 194 140 201 H118Z" fill="#FFFDFC"/>
+      <path d="M82 198 H101 M120 198 H138" fill="none" stroke="#E7D8C9" stroke-width="2.5"/>
+      <path d="M90 145 Q110 138 130 145 Q145 151 147 173 L137 186 H83 L73 173 Q76 151 90 145Z" fill="#FFFDFC"/>
+      <path d="M85 153 L95 152 V168 H125 V152 L135 153 L139 184 Q140 194 128 194 H92 Q80 194 81 184Z" fill="#FF7548"/>
+      <path d="M86 184 Q109 190 135 184" fill="none" stroke="#E65E37" stroke-width="3"/>
+      <circle cx="91" cy="168" r="2.5" fill="#FFFDFC" stroke="none"/>
+      <circle cx="129" cy="168" r="2.5" fill="#FFFDFC" stroke="none"/>
+      <path d="M101 176 Q106 174 110 177 Q114 174 119 176 V184 Q114 182 110 185 Q106 182 101 184Z" fill="#FFFDFC" stroke="none"/>
+      <path d="M110 177 V182" fill="none" stroke="#FF7548" stroke-width="1.5"/>
+    </g>
+    <g id="xz-head" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="53" cy="111" rx="10" ry="12" fill="#FFE9D2"/>
+      <ellipse cx="167" cy="111" rx="10" ry="12" fill="#FFE9D2"/>
+      <path d="M50 111 L55 114 M165 114 L170 111" fill="none" stroke="#DEA786" stroke-width="2.5"/>
+      <path d="M56 88 C56 62 80 51 110 51 C142 51 164 65 164 89 L166 110 C166 138 145 156 110 156 C77 156 54 139 54 112Z" fill="#FFE9D2"/>
+      <path d="M46 102 C38 82 45 61 61 49 C71 41 83 37 96 38 C96 29 108 25 118 30 L112 38 C137 32 160 42 172 61 C182 77 179 95 165 107 L158 84 C145 87 132 82 122 72 C111 85 96 87 84 80 C78 91 69 96 59 92 L55 108Z" fill="#FF7548"/>
+      <path d="M62 65 Q72 51 88 49" fill="none" stroke="#FFB18C" stroke-width="6"/>
+      <path d="M98 48 Q103 44 110 44" fill="none" stroke="#FFB18C" stroke-width="4"/>
+      <ellipse cx="72" cy="128" rx="10" ry="5.5" fill="#FFAF99" stroke="none"/>
+      <ellipse cx="148" cy="128" rx="10" ry="5.5" fill="#FFAF99" stroke="none"/>
+    </g>
+    <g id="xz-rest-arm" fill="#FFE9D2" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M81 150 Q67 156 64 172 Q64 180 71 181 Q76 181 78 175 L89 158Z"/>
+      <path d="M68 173 L72 175" fill="none" stroke="#DEA786" stroke-width="2"/>
+    </g>
+    <g id="xz-happy" stroke="#3B302D" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M79 112 Q86 102 94 112 M126 112 Q134 102 141 112"/>
+      <path d="M94 124 Q110 129 126 124 Q124 143 110 143 Q97 142 94 124Z" fill="#684039" stroke-width="3"/>
+      <path d="M102 137 Q111 131 120 137 Q111 145 102 137Z" fill="#FF929C" stroke="none"/>
+    </g>
+    <g id="xz-cheer-arm" fill="#FFE9D2" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M84 159 Q62 159 47 136 L33 119 Q27 111 31 106 Q35 102 40 107 L44 111 L42 103 Q41 98 46 98 Q50 98 51 104 L55 117 Q67 137 87 141Z"/>
+      <path d="M38 117 L43 122" fill="none" stroke="#DEA786" stroke-width="2"/>
+    </g>
+    <g id="xz-spark" fill="#F5B841" stroke="#3B302D" stroke-width="2.4" stroke-linejoin="round">
+      <path d="M0 -11 L3 -3 L11 0 L3 3 L0 11 L-3 3 L-11 0 L-3 -3Z"/>
+    </g>
+
+    <symbol id="xz-wave" viewBox="0 0 220 220" fill="none" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="110" cy="207" rx="39" ry="5" fill="#F0E9DF" stroke="none"/>
+      <use href="#xz-rest-arm"/>
+      <path d="M137 151 C154 151 166 143 177 132 L172 124 C168 118 169 114 173 114 C176 114 178 118 181 121 L179 108 C178 104 180 101 183 102 C186 102 187 108 189 115 L188 101 C188 96 192 94 195 97 C197 100 196 108 197 114 L198 106 C199 102 203 102 205 105 C207 108 204 118 203 124 C202 132 198 138 191 141 C180 158 162 171 141 170Z" fill="#FFE9D2"/>
+      <path d="M181 127 Q184 124 188 125" stroke="#DEA786" stroke-width="2"/>
+      <use href="#xz-body"/>
+      <g transform="rotate(-6 110 143)">
+        <use href="#xz-head"/>
+        <ellipse cx="87" cy="111" rx="5.4" ry="7.4" fill="#3B302D" stroke="none"/>
+        <ellipse cx="134" cy="111" rx="5.4" ry="7.4" fill="#3B302D" stroke="none"/>
+        <circle cx="89" cy="108" r="1.8" fill="#FFFDFC" stroke="none"/>
+        <circle cx="136" cy="108" r="1.8" fill="#FFFDFC" stroke="none"/>
+        <path d="M100 129 Q110 133 122 127 Q119 140 110 140 Q103 139 100 129Z" fill="#684039" stroke-width="2.8"/>
+        <path d="M108 136 Q112 134 116 136" stroke="#FF929C" stroke-width="3"/>
+      </g>
+      <path d="M182 85 L180 78 M203 88 L209 82" stroke="#FF7548" stroke-width="3"/>
+    </symbol>
+
+    <symbol id="xz-think" viewBox="0 0 220 220" fill="none" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="110" cy="207" rx="39" ry="5" fill="#F0E9DF" stroke="none"/>
+      <use href="#xz-rest-arm"/>
+      <path d="M138 156 C160 155 178 143 181 115 L182 103 C177 100 174 94 175 87 L171 79 C169 75 171 72 175 73 L182 79 L178 72 C176 68 179 65 183 67 L191 76 C196 76 200 81 200 88 C201 96 197 102 194 107 L193 121 C190 149 174 169 141 174Z" fill="#FFE9D2"/>
+      <use href="#xz-body"/>
+      <g transform="rotate(7 110 145)">
+        <use href="#xz-head"/>
+        <path d="M79 99 Q85 94 92 98 M128 94 Q135 88 142 94" stroke-width="2.8"/>
+        <ellipse cx="91" cy="112" rx="5" ry="6.5" fill="#3B302D" stroke="none"/>
+        <ellipse cx="139" cy="107" rx="5" ry="6.5" fill="#3B302D" stroke="none"/>
+        <circle cx="93" cy="110" r="1.6" fill="#FFFDFC" stroke="none"/>
+        <circle cx="141" cy="105" r="1.6" fill="#FFFDFC" stroke="none"/>
+        <ellipse cx="116" cy="134" rx="5" ry="6" fill="#684039" stroke-width="2.5"/>
+      </g>
+      <!-- 手指覆在发际前，腕部不描封口线，与后层手臂自然相接。 -->
+      <path d="M182 103 C177 100 174 94 175 87 L171 79 C169 75 171 72 175 73 L182 79 L178 72 C176 68 179 65 183 67 L191 76 C196 76 200 81 200 88 C201 96 197 102 194 107" fill="#FFE9D2"/>
+      <path d="M181 83 L185 87 M190 83 Q186 84 187 89 Q188 93 192 91" stroke="#DEA786" stroke-width="2"/>
+      <path d="M194 63 L198 58 M203 71 L209 69" stroke="#FF7548" stroke-width="2.5"/>
+      <path d="M25 61 C23 50 40 48 43 58 C46 67 33 68 34 77" stroke="#2B6CB0" stroke-width="4.5"/>
+      <circle cx="34" cy="87" r="2.8" fill="#2B6CB0" stroke="none"/>
+    </symbol>
+
+    <symbol id="xz-cheer" viewBox="0 0 220 220" fill="none" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="110" cy="207" rx="29" ry="4" fill="#F0E9DF" stroke="none"/>
+      <g transform="translate(0 -7) rotate(-4 110 150)">
+        <use href="#xz-cheer-arm"/>
+        <use href="#xz-cheer-arm" transform="translate(220 0) scale(-1 1)"/>
+        <use href="#xz-body"/>
+        <use href="#xz-head"/>
+        <use href="#xz-happy"/>
+      </g>
+      <use href="#xz-spark" transform="translate(28 66) rotate(-12)"/>
+      <use href="#xz-spark" transform="translate(190 54) scale(.8)"/>
+      <path d="M28 147 L23 153 M194 143 L200 148" stroke="#FF7548" stroke-width="3"/>
+    </symbol>
+
+    <symbol id="xz-oops" viewBox="0 0 220 220" fill="none" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="110" cy="207" rx="39" ry="5" fill="#F0E9DF" stroke="none"/>
+      <use href="#xz-body"/>
+      <g transform="translate(0 4) rotate(5 110 145)">
+        <use href="#xz-head"/>
+        <path d="M78 100 Q86 101 93 96 M127 96 Q134 101 142 100" stroke-width="2.6"/>
+        <path d="M80 110 L91 116 L80 121 M140 110 L129 116 L140 121"/>
+        <path d="M100 138 Q110 129 120 138" stroke-width="3"/>
+      </g>
+      <path d="M180 75 C177 84 171 90 172 97 C173 105 184 105 186 98 C188 92 184 82 180 75Z" fill="#8BD4E5" stroke-width="2.5"/>
+      <path d="M177 96 L178 98" stroke="#FFFDFC" stroke-width="3"/>
+      <path d="M81 157 Q68 160 68 169 Q68 179 89 178 L96 181 Q104 182 105 175 Q106 169 99 167 L84 168 L88 162Z" fill="#FFE9D2"/>
+      <path d="M139 157 Q152 160 152 169 Q152 179 131 178 L124 181 Q116 182 115 175 Q114 169 121 167 L136 168 L132 162Z" fill="#FFE9D2"/>
+      <path d="M95 170 Q92 173 95 177 M125 170 Q128 173 125 177" stroke="#DEA786" stroke-width="2"/>
+    </symbol>
+
+    <symbol id="xz-grad" viewBox="0 0 220 220" fill="none" stroke="#3B302D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="110" cy="207" rx="39" ry="5" fill="#F0E9DF" stroke="none"/>
+      <use href="#xz-rest-arm"/>
+      <path d="M137 153 Q150 151 157 169 L147 179 L134 164Z" fill="#FFE9D2"/>
+      <use href="#xz-body"/>
+      <use href="#xz-head"/>
+      <use href="#xz-happy"/>
+      <g transform="rotate(-8 110 46)">
+        <path d="M77 36 L79 57 Q110 69 141 57 L143 36Z" fill="#45414E"/>
+        <path d="M54 32 L110 12 L166 32 L110 52Z" fill="#45414E"/>
+        <path d="M72 32 L110 19 L144 31" stroke="#77717F" stroke-width="2.5"/>
+        <path d="M112 32 L155 39 V65" stroke="#F5B841" stroke-width="3"/>
+        <circle cx="155" cy="66" r="4" fill="#F5B841" stroke-width="2"/>
+        <path d="M152 71 L150 79 H160 L158 71" fill="#F5B841" stroke-width="2"/>
+      </g>
+      <path d="M110 160 L99 154 V168Z M110 160 L121 154 V168Z" fill="#F5B841" stroke-width="2.5"/>
+      <circle cx="110" cy="160" r="3" fill="#FF7548" stroke-width="2"/>
+      <g transform="rotate(12 139 176)">
+        <rect x="121" y="153" width="35" height="43" rx="4" fill="#FFFDFC" stroke-width="2.8"/>
+        <path d="M132 165 L137 170 L147 160" stroke="#28A461" stroke-width="3"/>
+        <path d="M129 181 H148 M129 187 H142" stroke="#D8C7B5" stroke-width="2.5"/>
+      </g>
+      <path d="M155 171 Q163 170 164 177 Q164 183 157 184 L152 182 Q148 178 151 174Z" fill="#FFE9D2" stroke-width="2.8"/>
+      <use href="#xz-spark" transform="translate(187 118) scale(.65)"/>
+    </symbol>
+  </defs>
+</svg>
 
 <!-- ==================== 文档页头 ==================== -->
 <header class="doc-header">
@@ -573,19 +720,8 @@ footer {
       <div class="demo-card">
         <div class="cap">小智对话气泡</div>
         <div class="bubble-row">
-          <svg viewBox="0 0 180 195" style="width:84px; flex:none">
-            <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-            <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-            <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-            <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-            <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-            <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-            <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-            <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/>
-            <ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-            <circle cx="71" cy="100" r="5" fill="#2E2A26"/><circle cx="109" cy="100" r="5" fill="#2E2A26"/>
-            <circle cx="73" cy="98" r="1.7" fill="#FFFFFF"/><circle cx="111" cy="98" r="1.7" fill="#FFFFFF"/>
-            <path d="M80,121 Q90,129 100,121" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <svg viewBox="0 0 220 220" style="width:84px; height:84px; flex:none" role="img" aria-label="挥手打招呼的小智">
+            <use href="#xz-wave"/>
           </svg>
           <div class="bubble">你好呀！我是小智 🙌<br>今天想学点啥？<em>万物皆可闯关！</em></div>
         </div>
@@ -597,135 +733,48 @@ footer {
   <hr class="sec-rule">
 
   <!-- ==================== 08 小智表情包 ==================== -->
-  <section class="sec">
+  <section class="sec" id="mascots">
     <h2 class="sec-title"><span class="no">08</span>小智表情包 · 情感化界面</h2>
-    <p class="sec-desc">小智 = 原创阿衰风吉祥物（橙红蘑菇头 · 大圆脸 · 豆豆眼 · 大头小身）。借鉴多邻国「吉祥物情感界面」机制：每个关键场景对应一个表情状态。v1.1 中小智是每屏「唯一用力」的元素 —— 角色本身承担情绪，界面其他部分保持安静。</p>
+    <p class="sec-desc">小智，你的闯关同桌。蓬松橙发、软软的圆脸，穿着有小书口袋的背带裤。新版用短手短脚和轻微歪头，让问候、思考和庆祝更有温度；答错时陪你一起懊恼，再一起继续。</p>
     <div class="mascot-grid">
 
       <!-- 表情 1：问好（挥手） -->
       <div class="mascot-card">
-        <svg viewBox="0 0 180 195">
-          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M150,168 Q174,134 160,66" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
-          <path d="M150,168 Q174,134 160,66" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
-          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-          <circle cx="71" cy="100" r="5" fill="#2E2A26"/><circle cx="109" cy="100" r="5" fill="#2E2A26"/>
-          <circle cx="73" cy="98" r="1.7" fill="#FFFFFF"/><circle cx="111" cy="98" r="1.7" fill="#FFFFFF"/>
-          <path d="M80,121 Q90,129 100,121" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <circle cx="160" cy="66" r="12" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M170,48 L175,40 M172,60 L179,56" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
+        <svg viewBox="0 0 220 220" role="img" aria-label="小智歪头微笑，举起小手打招呼"><use href="#xz-wave"/></svg>
         <b>挥手问好</b>
-        <small>豆豆眼 + 微笑 + 手臂从体侧伸出上扬</small>
+        <small>「嗨，今天想学点什么？」<br>歪头笑，和你打个招呼</small>
         <span class="use">首页 / 登录页</span>
       </div>
 
       <!-- 表情 2：挠头思考 -->
       <div class="mascot-card">
-        <svg viewBox="0 0 180 195">
-          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M150,168 Q178,126 126,30" stroke="#2E2A26" stroke-width="14" fill="none" stroke-linecap="round"/>
-          <path d="M150,168 Q178,126 126,30" stroke="#FFE9D2" stroke-width="8" fill="none" stroke-linecap="round"/>
-          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-          <circle cx="75" cy="96" r="5" fill="#2E2A26"/><circle cx="113" cy="96" r="5" fill="#2E2A26"/>
-          <ellipse cx="90" cy="122" rx="6" ry="7" fill="none" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="126" cy="30" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M28,46 L20,38 M36,32 L32,22" stroke="#2E2A26" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M30,58 Q42,58 42,70 Q42,80 32,82 L32,90" stroke="#2B6CB0" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <circle cx="32" cy="98" r="3.5" fill="#2B6CB0"/>
-        </svg>
+        <svg viewBox="0 0 220 220" role="img" aria-label="小智抬眼挠头，认真思考问题"><use href="#xz-think"/></svg>
         <b>挠头思考</b>
-        <small>O 嘴 + 手从体侧绕至头顶 + 问号在对侧</small>
+        <small>「嗯…这题有点意思。」<br>抬眼想一想，灵感马上来</small>
         <span class="use">AI 出题进度页</span>
       </div>
 
       <!-- 表情 3：欢呼 -->
       <div class="mascot-card">
-        <svg viewBox="0 0 180 195">
-          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M30,168 Q6,138 16,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
-          <path d="M30,168 Q6,138 16,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
-          <path d="M150,168 Q174,138 164,52" stroke="#2E2A26" stroke-width="15" fill="none" stroke-linecap="round"/>
-          <path d="M150,168 Q174,138 164,52" stroke="#FFE9D2" stroke-width="9" fill="none" stroke-linecap="round"/>
-          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-          <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
-          <circle cx="16" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="164" cy="52" r="11" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(12,28) rotate(-16)"/>
-          <path d="M0,-9 L2.5,-3 L9,-2.5 L4,2 L5.5,9 L0,5.5 L-5.5,9 L-4,2 L-9,-2.5 L-2.5,-3 Z" fill="#FFD23F" stroke="#2E2A26" stroke-width="2" transform="translate(168,28) rotate(16)"/>
-        </svg>
+        <svg viewBox="0 0 220 220" role="img" aria-label="小智笑弯了眼，张开双手开心跃起"><use href="#xz-cheer"/></svg>
         <b>欢呼雀跃</b>
-        <small>弯月眼 + 大笑 + 双臂从体侧对称高举 + 双星</small>
+        <small>「耶！这都被你拿下了！」<br>笑弯了眼，开心到跳起来</small>
         <span class="use">答对反馈 / 通关</span>
       </div>
 
       <!-- 表情 4：懊恼 -->
       <div class="mascot-card">
-        <svg viewBox="0 0 180 195">
-          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-          <path d="M63,96 L75,102 L63,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
-          <path d="M117,96 L105,102 L117,108" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
-          <path d="M80,126 Q90,118 100,126" stroke="#2E2A26" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M152,32 Q161,49 152,57 Q143,49 152,32 Z" fill="#7EC8E3" stroke="#2E2A26" stroke-width="2.5"/>
-          <path d="M50,84 L58,90 M122,84 L114,90" stroke="#2E2A26" stroke-width="2" opacity=".45" stroke-linecap="round"/>
-        </svg>
+        <svg viewBox="0 0 220 220" role="img" aria-label="小智缩起肩膀，带着小汗滴轻轻懊恼"><use href="#xz-oops"/></svg>
         <b>懊恼汗颜</b>
-        <small>&gt;&lt; 眼 + 倒嘴 + 汗滴（不刺眼）</small>
+        <small>「哎呀，差一点点！」<br>缩缩肩没关系，再试一次</small>
         <span class="use">答错反馈</span>
       </div>
 
       <!-- 表情 5：通关学士帽 -->
       <div class="mascot-card">
-        <svg viewBox="0 0 180 195">
-          <path d="M26,195 C26,160 54,148 90,148 C126,148 154,160 154,195 Z" fill="#FFFFFF" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M67,152 L63,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <path d="M113,152 L117,193" stroke="#FF6B35" stroke-width="9" stroke-linecap="round"/>
-          <circle cx="37" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="143" cy="102" r="9" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <circle cx="90" cy="98" r="52" fill="#FFE9D2" stroke="#2E2A26" stroke-width="3"/>
-          <path d="M37,90 Q52,68 66,82 Q78,62 90,80 Q102,62 114,82 Q128,68 143,90 C147,30 119,10 90,10 C61,10 33,30 37,90 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <ellipse cx="60" cy="114" rx="8" ry="5" fill="#FFB199"/><ellipse cx="120" cy="114" rx="8" ry="5" fill="#FFB199"/>
-          <path d="M63,100 Q71,92 79,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <path d="M101,100 Q109,92 117,100" stroke="#2E2A26" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <path d="M75,118 Q90,140 105,118 Z" fill="#8C4A52" stroke="#2E2A26" stroke-width="3" stroke-linejoin="round"/>
-          <path d="M81,129 Q90,136 99,129 L99,126 Q90,123 81,126 Z" fill="#FF8FA3"/>
-          <rect x="60" y="26" width="60" height="12" rx="4" fill="#2E2A26"/>
-          <path d="M46,26 L90,8 L134,26 L90,40 Z" fill="#2E2A26"/>
-          <path d="M132,26 L140,42" stroke="#FFD23F" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="141" cy="45" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
-          <path d="M90,152 L76,144 L76,162 Z M90,152 L104,144 L104,162 Z" fill="#FF6B35" stroke="#2E2A26" stroke-width="2.5" stroke-linejoin="round"/>
-          <circle cx="90" cy="153" r="4.5" fill="#FFD23F" stroke="#2E2A26" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 220 220" role="img" aria-label="小智戴着学士帽，骄傲地举起通关答卷"><use href="#xz-grad"/></svg>
         <b>通关骄傲</b>
-        <small>学士帽 + 领结 + 满分卷子意象</small>
+        <small>「看，这是你的高光时刻。」<br>戴好学士帽，晒晒通关卷</small>
         <span class="use">通关报告 / 分享海报</span>
       </div>
 

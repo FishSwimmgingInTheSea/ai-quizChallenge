@@ -17,6 +17,8 @@ from app.core.security import decode_token
 from app.db.orm_models import User
 from app.db.session import get_db
 from app.services.auth_service import AuthService
+from app.services.kb_service import KbService
+from app.services.kb_store import get_kb_store
 from app.services.quiz_service import QuizService
 from app.services.record_service import RecordService
 from app.services.report_service import ReportService
@@ -56,6 +58,11 @@ def get_record_service(db: Session = Depends(get_db)) -> RecordService:
     return RecordService(db)
 
 
+def get_kb_service(db: Session = Depends(get_db)) -> KbService:
+    """知识库应用服务（请求级 db + 全局单例向量库）。"""
+    return KbService(db, get_kb_store())
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     db: Session = Depends(get_db),
@@ -76,3 +83,16 @@ def get_current_user(
     if user is None:
         raise UnauthorizedError()
     return user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """可选登录依赖：无 Token 返回 None；带 Token 但无效仍报 4010。
+
+    （用户携带过期 Token 却被静默匿名处理，比明确保错更难排查。）
+    """
+    if credentials is None or not credentials.credentials:
+        return None
+    return get_current_user(credentials=credentials, db=db)

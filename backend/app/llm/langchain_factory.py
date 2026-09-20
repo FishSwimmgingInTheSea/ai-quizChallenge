@@ -10,10 +10,10 @@ from functools import lru_cache
 from typing import Any
 
 from langchain_core.runnables import Runnable
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import BaseModel
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 
 
 def _build_chat_model(temperature: float) -> ChatOpenAI:
@@ -49,6 +49,30 @@ def get_report_model() -> ChatOpenAI:
 def get_research_model() -> ChatOpenAI:
     """研究模型（quiz-web-search-grounding D9，temperature 取 research_temperature，事实性优先低温）。"""
     return _build_chat_model(get_settings().research_temperature)
+
+
+# ---------- 知识库向量模型（百炼 text-embedding-v4，OpenAI 兼容接口） ----------
+
+
+def _build_embeddings(settings: Settings) -> OpenAIEmbeddings:
+    """构建知识库 embedding 模型；未配置 key 时由 openai 客户端抛错（调用方先检查）。"""
+    return OpenAIEmbeddings(
+        model=settings.embedding_model,
+        api_key=settings.dashscope_api_key,
+        base_url=settings.embedding_base_url,
+        dimensions=settings.embedding_dimensions,
+        # 百炼单请求最多 10 条文本：批量自动分批上限
+        chunk_size=settings.embedding_batch_size,
+        # DashScope 非原生 OpenAI 端点：关闭 tiktoken 长度自查，
+        # 否则嵌入请求会因本地分块逻辑报错（社区多案例验证的坑）
+        check_embedding_ctx_length=False,
+    )
+
+
+@lru_cache
+def get_embeddings() -> OpenAIEmbeddings:
+    """知识库向量模型（全局单例）。"""
+    return _build_embeddings(get_settings())
 
 
 def with_structured_output(model: ChatOpenAI, schema: type[BaseModel]) -> Runnable[Any, Any]:

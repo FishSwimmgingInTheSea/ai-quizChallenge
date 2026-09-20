@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
+import re
 from typing import Awaitable, Callable, TypeVar
 
 from app.core.exceptions import GenerationError
@@ -14,7 +16,7 @@ from app.llm.output_schemas import OptionSchema, QuestionDraft, QuizMetaDraft
 from app.llm.quiz_chain import LangChainQuizGenerator, QuizGenerator
 from app.models.common import Difficulty, QuestionType
 from app.models.quiz import GenerateQuizRequest, Option, Question, Quiz, TaskState
-from app.prompts.quiz_prompt import NO_RESEARCH_CONTEXT
+from app.prompts.quiz_prompt import AUTO_KB_TOPIC, NO_RESEARCH_CONTEXT
 from app.services.research_service import (
     ResearchOutcome,
     ResearchProvider,
@@ -117,6 +119,33 @@ def draft_to_question(draft: QuestionDraft, index: int) -> Question:
     )
 
 
+# ---------- 去重硬校验（实测 deepseek-flash 会稳定照抄已有题干，纯 Prompt 约束不可靠） ----------
+_STEM_PUNCT_RE = re.compile(r"[\s，。？！、；：（）\[\]【】,.?!;:]+")
+
+
+def _normalize_stem(text: str) -> str:
+    """题干归一化：剔除空白与常见标点，仅保留实义字符用于比较。"""
+    return _STEM_PUNCT_RE.sub("", text)
+
+
+def is_duplicate_stem(
+    new_stem: str, existing_stems: list[str], threshold: float = 0.8
+) -> bool:
+    """判断新题干是否与已有题干重复：归一化后全等，或相似度达阈值。"""
+    norm_new = _normalize_stem(new_stem)
+    if not norm_new:
+        return False
+    for stem in existing_stems:
+        norm_old = _normalize_stem(stem)
+        if not norm_old:
+            continue
+        if norm_new == norm_old:
+            return True
+        if difflib.SequenceMatcher(None, norm_new, norm_old).ratio() >= threshold:
+            return True
+    return False
+
+
 async def _with_retry(
     factory: Callable[[], Awaitable[T]], attempts: int = 3, label: str = "调用"
 ) -> T:
@@ -145,12 +174,22 @@ class QuizService:
         self._research = research or get_research_service()
         self._retry_attempts = retry_attempts
 
-    async def _run_research(self, user_input: str) -> ResearchOutcome:
-        """出题前联网研究（quiz-web-search-grounding D1）。
+    async def _run_research(
+        self,
+        user_input: str,
+        *,
+        user_id: int | None = None,
+        kb_doc_ids: list[int] | None = None,
+    ) -> ResearchOutcome:
+        """出题前联网研究（quiz-web-search-grounding D1 + kb-rag）。
 
-        ResearchService 内部保证一切失败路径均降级返回，不抛异常。
+        选中知识库文档时把 user_id / kb_doc_ids 传给研究服务（Agent 自行
+        决定知识库检索与联网搜索的取舍）；ResearchService 内部保证一切失败
+        路径均降级返回，不抛异常。
         """
-        outcome = await self._research.research(user_input)
+        outcome = await self._research.research(
+            user_input, user_id=user_id, kb_doc_ids=kb_doc_ids
+        )
         if outcome.degraded:
             logger.info("联网研究降级（%s），回退纯模型出题", outcome.degrade_reason)
         return outcome
@@ -160,6 +199,19 @@ class QuizService:
         """研究产出转为出题资料块；无资料时回退占位文本（D5）。"""
         text = outcome.context_text.strip()
         return text if text else NO_RESEARCH_CONTEXT
+
+    @staticmethod
+    def _with_auto_topic(
+        req: GenerateQuizRequest, outcome: ResearchOutcome
+    ) -> GenerateQuizRequest:
+        """自动出题（空输入）：用研究推断的主题替换空 user_input 进入出题 prompt。
+
+        研究降级未产出主题时回退固定文案，出题链路不因空主题断掉。
+        """
+        if req.user_input.strip():
+            return req
+        topic = outcome.topic.strip() or AUTO_KB_TOPIC
+        return req.model_copy(update={"user_input": topic})
 
     async def _generate_meta(
         self, req: GenerateQuizRequest, research_context: str
@@ -180,27 +232,57 @@ class QuizService:
         existing_stems: list[str],
         research_context: str,
     ) -> Question:
+        """生成单题：字段校验 + 去重硬校验，重复题触发重试。
+
+        被拒题干会并入禁区传给下一次重试（模型看到更大的禁止清单）；
+        最后一次尝试免除查重兑底——主题资料极窄时宁可接受重复，
+        也不让任务整体失败（与联网研究降级同一取舍，方案 §7.4）。
+        """
         difficulty = resolve_difficulty(req.difficulty, index)
+        banned: list[str] = list(existing_stems)
+        last_exc: Exception | None = None
+        for attempt in range(1, self._retry_attempts + 1):
+            try:
+                draft = await self._generator.generate_question(
+                    req.user_input,
+                    qtype,
+                    difficulty,
+                    index,
+                    banned,
+                    research_context,
+                )
+                validate_question_draft(draft, qtype)
+                if is_duplicate_stem(draft.stem, banned):
+                    if attempt < self._retry_attempts:
+                        banned.append(draft.stem)
+                        raise GenerationError(
+                            f"第 {index} 题与已生成题目重复，需换知识点重出"
+                        )
+                    logger.warning(
+                        "第 %d 题重试 %d 次后仍与已有题目相似，按兑底策略接受",
+                        index,
+                        self._retry_attempts,
+                    )
+                return draft_to_question(draft, index)
+            except Exception as exc:  # noqa: BLE001 - 需要兑底一切模型侧异常
+                last_exc = exc
+                logger.warning(
+                    "生成第 %d 题 第 %d/%d 次失败：%s",
+                    index,
+                    attempt,
+                    self._retry_attempts,
+                    exc,
+                )
+        raise GenerationError(f"生成第 {index} 题多次失败：{last_exc}")
 
-        async def _once() -> Question:
-            draft = await self._generator.generate_question(
-                req.user_input,
-                qtype,
-                difficulty,
-                index,
-                existing_stems,
-                research_context,
-            )
-            validate_question_draft(draft, qtype)
-            return draft_to_question(draft, index)
-
-        return await _with_retry(
-            _once, attempts=self._retry_attempts, label=f"生成第 {index} 题"
-        )
-
-    async def generate_quiz_sync(self, req: GenerateQuizRequest) -> Quiz:
+    async def generate_quiz_sync(
+        self, req: GenerateQuizRequest, *, user_id: int | None = None
+    ) -> Quiz:
         """同步一次性生成完整题库（调试接口 /sync 用）。"""
-        outcome = await self._run_research(req.user_input)
+        outcome = await self._run_research(
+            req.user_input, user_id=user_id, kb_doc_ids=req.kb_doc_ids
+        )
+        req = self._with_auto_topic(req, outcome)
         research_context = self._research_context_of(outcome)
         types = plan_question_types(req.question_count)
         meta = await self._generate_meta(req, research_context)
@@ -221,14 +303,24 @@ class QuizService:
         return quiz
 
     async def run_generation(
-        self, task_id: str, req: GenerateQuizRequest, store: TaskStore
+        self,
+        task_id: str,
+        req: GenerateQuizRequest,
+        store: TaskStore,
+        user_id: int | None = None,
     ) -> None:
-        """后台任务：联网研究 → 元信息 → 逐题生成，实时更新任务状态。"""
+        """后台任务：联网研究 → 元信息 → 逐题生成，实时更新任务状态。
+
+        user_id 仅在用户选了知识库文档时由路由层传入（kb-rag）。
+        """
         types = plan_question_types(req.question_count)
         store.set_status(task_id, "generating")
         store.set_phase(task_id, "researching")
         try:
-            outcome = await self._run_research(req.user_input)
+            outcome = await self._run_research(
+                req.user_input, user_id=user_id, kb_doc_ids=req.kb_doc_ids
+            )
+            req = self._with_auto_topic(req, outcome)
             research_context = self._research_context_of(outcome)
             store.set_research_used(task_id, not outcome.degraded)
             store.set_phase(task_id, "generating")

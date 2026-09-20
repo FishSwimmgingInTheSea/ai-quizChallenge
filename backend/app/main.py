@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.response import fail
-from app.api.v1.routes import auth, health, quiz, report, user
+from app.api.v1.routes import auth, health, kb, quiz, report, user
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
@@ -57,9 +57,11 @@ def create_app() -> FastAPI:
     async def _validation_handler(
         _: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        # 自定义校验器的 ctx 含异常对象不可 JSON 序列化，回包剔除（msg 已含原因）
+        errors = [{k: v for k, v in err.items() if k != "ctx"} for err in exc.errors()]
         return JSONResponse(
             status_code=200,
-            content=fail(4001, "请求参数不合法", data=exc.errors()),
+            content=fail(4001, "请求参数不合法", data=errors),
         )
 
     @app.exception_handler(Exception)
@@ -75,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(report.router, prefix=api_prefix)
     app.include_router(auth.router, prefix=api_prefix)
     app.include_router(user.router, prefix=api_prefix)
+    app.include_router(kb.router, prefix=api_prefix)
 
     # 头像等静态资源：uploads/ 挂到 /static（用户系统方案设计 §6.3）
     upload_dir = Path(settings.upload_dir)

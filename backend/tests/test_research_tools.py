@@ -5,10 +5,11 @@ from __future__ import annotations
 import inspect
 
 import pytest
+from langchain_core.documents import Document
 from pydantic import ValidationError
 
 from app.core.config import Settings
-from app.llm.research_tools import build_research_tools
+from app.llm.research_tools import build_kb_search_tool, build_research_tools
 from langchain_tavily._utilities import (
     TavilyExtractAPIWrapper,
     TavilySearchAPIWrapper,
@@ -311,3 +312,117 @@ async def test_web_extract_all_failed_returns_unavailable():
     out = await web_extract.ainvoke({"urls": ["https://x.com"]})
     # 全部失败时至少给出失败原因
     assert "403" in out
+
+
+# ---------- kb_search：知识库检索工具 ----------
+
+
+class FakeKbStore:
+    """记录调用参数并可编程响应 / 异常的知识库存储 mock。"""
+
+    def __init__(self, results: list[Document] | None = None, error: Exception | None = None):
+        self.calls: list[dict] = []
+        self.results = results or []
+        self.error = error
+
+    def search(self, user_id: int, query: str, *, k: int = 4, doc_ids=None):
+        self.calls.append(
+            {"user_id": user_id, "query": query, "k": k, "doc_ids": doc_ids}
+        )
+        if self.error:
+            raise self.error
+        return self.results
+
+
+def make_kb_settings(**overrides) -> Settings:
+    defaults = dict(
+        _env_file=None,
+        tavily_api_key="test-key",
+        kb_enabled=True,
+        dashscope_api_key="sk-test",
+        kb_top_k=4,
+        kb_top_k_limit=8,
+        research_tool_output_max_chars=6000,
+    )
+    defaults.update(overrides)
+    return Settings(**defaults)
+
+
+def test_kb_search_named_and_described():
+    tool = build_kb_search_tool(
+        make_kb_settings(), user_id=7, doc_ids=[3], kb_store=FakeKbStore()
+    )
+    assert tool.name == "kb_search"
+    # 用法指引写入 docstring，模型可见
+    assert "私有知识库" in tool.description
+
+
+async def test_kb_search_passes_user_and_doc_filter():
+    fake = FakeKbStore(
+        results=[
+            Document(
+                page_content="员工守则第一条：每日站会同步进展。",
+                metadata={"doc_id": 3, "filename": "handbook.txt"},
+            )
+        ]
+    )
+    tool = build_kb_search_tool(make_kb_settings(), user_id=7, doc_ids=[3], kb_store=fake)
+    out = await tool.ainvoke({"query": "员工守则"})
+
+    call = fake.calls[0]
+    assert call["user_id"] == 7
+    assert call["doc_ids"] == [3]
+    assert call["k"] == 4  # 默认 k 取 settings.kb_top_k
+    # 输出含来源文件名与原文
+    assert "handbook.txt" in out
+    assert "员工守则第一条" in out
+
+
+async def test_kb_search_custom_k():
+    fake = FakeKbStore(results=[])
+    tool = build_kb_search_tool(make_kb_settings(), user_id=1, doc_ids=[2], kb_store=fake)
+    await tool.ainvoke({"query": "q", "k": 6})
+    assert fake.calls[0]["k"] == 6
+
+
+async def test_kb_search_k_bounds():
+    tool = build_kb_search_tool(
+        make_kb_settings(), user_id=1, doc_ids=[2], kb_store=FakeKbStore()
+    )
+    with pytest.raises(ValidationError):
+        await tool.ainvoke({"query": "q", "k": 9})
+    with pytest.raises(ValidationError):
+        await tool.ainvoke({"query": "q", "k": 0})
+
+
+async def test_kb_search_empty_results_hint():
+    tool = build_kb_search_tool(
+        make_kb_settings(), user_id=1, doc_ids=[2], kb_store=FakeKbStore(results=[])
+    )
+    out = await tool.ainvoke({"query": "不存在的概念"})
+    assert "未检索到" in out
+
+
+async def test_kb_search_error_returns_degraded_text():
+    tool = build_kb_search_tool(
+        make_kb_settings(),
+        user_id=1,
+        doc_ids=[2],
+        kb_store=FakeKbStore(error=RuntimeError("mock 向量库崩溃")),
+    )
+    out = await tool.ainvoke({"query": "q"})
+    assert "暂时不可用" in out
+
+
+async def test_kb_search_truncates_long_chunk():
+    tool = build_kb_search_tool(
+        make_kb_settings(),
+        user_id=1,
+        doc_ids=[2],
+        kb_store=FakeKbStore(
+            results=[Document(page_content="长" * 3000, metadata={"filename": "a.txt"})]
+        ),
+    )
+    out = await tool.ainvoke({"query": "q"})
+    assert out.count("长") <= 2500
+    assert "已截断" in out

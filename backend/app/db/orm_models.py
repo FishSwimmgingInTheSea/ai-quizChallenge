@@ -178,3 +178,51 @@ class QuizReport(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(), server_default=func.now(), nullable=False
     )
+
+
+class KbDocument(Base):
+    """知识库文档表：上传记录 + 异步处理状态机 + 向量入库统计。
+
+    status：processing（后台解析/向量化中）→ ready（可检索）/ failed（解析或
+    嵌入失败，error 存原因）；向量本体在 Chroma（user_{id} collection，
+    doc_id 元数据），MySQL 只存元信息与状态。
+    """
+
+    __tablename__ = "kb_documents"
+    __table_args__ = (
+        Index("idx_kb_docs_user_time", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = _bigint_pk()
+    user_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(mysql.BIGINT(unsigned=True), "mysql"),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    # pdf / docx / md / txt
+    doc_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    # 上传文件字节数
+    file_size: Mapped[int] = mapped_column(
+        Integer().with_variant(mysql.INTEGER(unsigned=True), "mysql"),
+        nullable=False,
+    )
+    # 解析后纯文本字符数 / 分块数（ready 后有值）
+    char_count: Mapped[int] = mapped_column(
+        Integer().with_variant(mysql.INTEGER(unsigned=True), "mysql"),
+        nullable=False,
+        default=0,
+    )
+    chunk_count: Mapped[int] = mapped_column(_small_unsigned(), nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="processing")
+    # 失败原因（截断 255）；成功时空串
+    error: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

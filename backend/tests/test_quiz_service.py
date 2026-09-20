@@ -7,9 +7,10 @@ import pytest
 from app.core.exceptions import GenerationError
 from app.llm.output_schemas import OptionSchema, QuestionDraft
 from app.models.quiz import GenerateQuizRequest, TaskState
-from app.prompts.quiz_prompt import NO_RESEARCH_CONTEXT
+from app.prompts.quiz_prompt import AUTO_KB_TOPIC, NO_RESEARCH_CONTEXT
 from app.services.quiz_service import (
     QuizService,
+    is_duplicate_stem,
     plan_question_types,
     resolve_difficulty,
     validate_question_draft,
@@ -128,6 +129,81 @@ async def test_generation_fails_after_exhausting_retries():
         )
 
 
+# ---------- 去重硬校验（实测 deepseek-flash 会稳定照抄已有题干） ----------
+def test_is_duplicate_stem_detects_copy_and_paraphrase():
+    # 归一化后全等：空白与标点差异不影响判定
+    assert is_duplicate_stem(
+        "微信小程序中，使用分包加载最主要的好处是什么？",
+        ["微信小程序中使用分包加载最主要的好处是什么"],
+    )
+    # 同义改写型重复（实测模型照抄型变体）
+    assert is_duplicate_stem(
+        "使用分包加载最主要的好处是什么？",
+        ["使用分包加载最主要的优点是什么？"],
+    )
+    # 不同知识点不误杀
+    assert not is_duplicate_stem(
+        "分包加载的主包体积上限是多少？",
+        ["使用分包加载最主要的好处是什么？"],
+    )
+
+
+class DuplicateOnceGenerator(FakeQuizGenerator):
+    """第 2 题首次尝试照抄第 1 题（模拟实测的模型照抄行为），之后恢复。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._dup_done = False
+
+    async def generate_question(self, *args, **kwargs) -> QuestionDraft:  # type: ignore[override]
+        self.question_calls += 1
+        qtype = args[1] if len(args) > 1 else kwargs["question_type"]
+        index = args[3] if len(args) > 3 else kwargs["index"]
+        if index == 2 and not self._dup_done:
+            self._dup_done = True
+            return make_draft(qtype, 1)  # 照抄第 1 题
+        return make_draft(qtype, index)
+
+
+async def test_duplicate_stem_triggers_retry_and_recovers():
+    """重复题触发重试，重试产出不重复题，最终题库无重复。"""
+    gen = DuplicateOnceGenerator()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), retry_attempts=3
+    )
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(user_input="学习 RAG", question_count=5)
+    )
+    # 5 题 + 第 2 题的 1 次查重重试
+    assert gen.question_calls == 6
+    stems = [q.stem for q in quiz.questions]
+    assert len(set(stems)) == 5
+
+
+async def test_duplicate_stem_fallback_accepts_after_retries():
+    """重试耗尽仍重复：最后一次免除查重兑底，任务完成优先于完美去重。"""
+
+    class AlwaysDuplicateGenerator(FakeQuizGenerator):
+        async def generate_question(self, *args, **kwargs) -> QuestionDraft:  # type: ignore[override]
+            self.question_calls += 1
+            qtype = args[1] if len(args) > 1 else kwargs["question_type"]
+            return make_draft(qtype, 1)  # 永远照抄第 1 题
+
+    gen = AlwaysDuplicateGenerator()
+    service = QuizService(
+        generator=gen, research=FakeResearchService(), retry_attempts=3
+    )
+    # count=4 → [single, single, multiple, judge]，前两题同型才能构成照抄重复
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(user_input="学习 RAG", question_count=4)
+    )
+    # 第 1 题 1 次 + 第 2 题 3 次耗尽后兑底接受 + 第 3/4 题各 1 次
+    assert len(quiz.questions) == 4
+    assert gen.question_calls == 6
+    assert quiz.questions[1].stem == quiz.questions[0].stem  # 兑底接受重复
+    assert quiz.questions[2].stem != quiz.questions[0].stem
+
+
 # ---------- 异步任务式生成 ----------
 async def test_run_generation_updates_task_state():
     gen = FakeQuizGenerator()
@@ -217,7 +293,13 @@ async def test_run_generation_phase_researching_during_research():
     observed: dict = {}
 
     class ObservingResearch:
-        async def research(self, user_input: str) -> ResearchOutcome:
+        async def research(
+            self,
+            user_input: str,
+            *,
+            user_id: int | None = None,
+            kb_doc_ids: list[int] | None = None,
+        ) -> ResearchOutcome:
             state = store.get("t1")
             observed["status"] = state.status
             observed["phase"] = state.phase
@@ -253,3 +335,41 @@ async def test_generate_quiz_sync_passes_research_context():
     assert len(quiz.questions) == 5
     assert gen.meta_research_contexts[0] == outcome.context_text
     assert gen.question_research_contexts[0] == outcome.context_text
+
+
+# ---------- 自动出题（空输入 + 知识库：主题兜底替换） ----------
+async def test_auto_topic_from_research_replaces_empty_input():
+    """空输入：出题 prompt 收到研究推断的主题而非空串。"""
+    gen = FakeQuizGenerator()
+    research = FakeResearchService(
+        outcome=ResearchOutcome(context_text="资料要点", topic="员工手册核心制度")
+    )
+    service = QuizService(generator=gen, research=research)
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(user_input="", kb_doc_ids=[3])
+    )
+    assert gen.meta_inputs[0] == "员工手册核心制度"
+    assert quiz.user_input == "员工手册核心制度"
+
+
+async def test_auto_topic_fallback_when_research_degraded():
+    """空输入 + 研究降级：回退固定主题文案，出题链路不断。"""
+    gen = FakeQuizGenerator()
+    service = QuizService(generator=gen, research=FakeResearchService())
+    quiz = await service.generate_quiz_sync(
+        GenerateQuizRequest(user_input="", kb_doc_ids=[3])
+    )
+    assert gen.meta_inputs[0] == AUTO_KB_TOPIC
+    assert quiz.user_input == AUTO_KB_TOPIC
+    assert gen.meta_research_contexts[0] == NO_RESEARCH_CONTEXT
+
+
+async def test_non_empty_input_keeps_user_topic():
+    """回归：非空输入仍用用户原主题，研究推断主题不覆盖。"""
+    gen = FakeQuizGenerator()
+    research = FakeResearchService(
+        outcome=ResearchOutcome(context_text="要点", topic="另一个主题")
+    )
+    service = QuizService(generator=gen, research=research)
+    await service.generate_quiz_sync(GenerateQuizRequest(user_input="学习 RAG"))
+    assert gen.meta_inputs[0] == "学习 RAG"

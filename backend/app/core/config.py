@@ -48,6 +48,28 @@ class Settings(BaseSettings):
     research_context_max_chars: int = 6000
     research_cache_ttl_seconds: int = 900
 
+    # ===== 知识库 RAG（用户私有知识库） =====
+    # 百炼（DashScope）OpenAI 兼容接口；空 = 知识库功能不可用（上传报错/检索降级）
+    dashscope_api_key: str = ""
+    embedding_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    embedding_model: str = "text-embedding-v4"
+    embedding_dimensions: int = 1024
+    # embedding 单请求最大文本条数（百炼 text-embedding-v4 限 10 行/请求）
+    embedding_batch_size: int = 10
+
+    # 知识库总开关（紧急关断用）
+    kb_enabled: bool = True
+    # Chroma 持久化目录（相对运行目录，重启不丢数据）
+    kb_persist_dir: str = "kb_data"
+    # 文本分块：块大小 / 相邻块重叠（字符数）
+    kb_chunk_size: int = 500
+    kb_chunk_overlap: int = 50
+    # 单文档大小上限（MB）
+    kb_max_file_mb: int = 10
+    # kb_search 默认/最大检索条数
+    kb_top_k: int = 4
+    kb_top_k_limit: int = 8
+
     # 业务参数
     input_min_len: int = 2
     input_max_len: int = 500

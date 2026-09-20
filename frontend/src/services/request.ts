@@ -17,7 +17,7 @@ export const UNAUTHORIZED_CODE = 4010
 
 interface RequestOptions {
   url: string
-  method?: 'GET' | 'POST' | 'PUT'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, any>
 }
 
