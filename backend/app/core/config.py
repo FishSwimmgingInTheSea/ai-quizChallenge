@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import quote_plus
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -101,8 +102,13 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # ===== 用户系统（用户系统方案设计 §11） =====
-    # 未配置 MySQL 时回退本地 SQLite 文件，保证可启动；正式环境必须在 .env 指定 MySQL
-    database_url: str = "sqlite:///./ai_quiz_local.db"
+    # MySQL 连接（拆分字段）。DB_HOST + DB_USER 配齐才走 MySQL，否则回退本地
+    # SQLite 文件（保证可启动）；正式环境请配齐以下 DB_*。
+    db_host: str = ""
+    db_port: int = 3306
+    db_user: str = ""
+    db_password: str = ""
+    db_name: str = "ai_quiz"
     # 任一为空 -> dev 兜底登录（不调 code2session）；两者均配置 -> 真实登录
     wechat_appid: str = ""
     wechat_secret: str = ""
@@ -110,6 +116,20 @@ class Settings(BaseSettings):
     jwt_expire_days: int = 30
     # 头像上传目录（相对运行目录），对外经 /static 挂载
     upload_dir: str = "uploads"
+
+    @property
+    def database_url(self) -> str:
+        """由 DB_* 组装 SQLAlchemy 连接串；未配齐则回退本地 SQLite（保证可启动）。"""
+        # DB_HOST + DB_USER 配齐 -> MySQL（用户名/密码 URL 编码，容许 @ : / 等特殊字符）
+        if self.db_host.strip() and self.db_user.strip():
+            return (
+                "mysql+pymysql://"
+                f"{quote_plus(self.db_user.strip())}:{quote_plus(self.db_password)}"
+                f"@{self.db_host.strip()}:{self.db_port}"
+                f"/{self.db_name.strip()}?charset=utf8mb4"
+            )
+        # 否则回退本地 SQLite
+        return "sqlite:///./ai_quiz_local.db"
 
     @property
     def cors_origin_list(self) -> list[str]:
