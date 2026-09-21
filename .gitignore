@@ -8,6 +8,9 @@ node_modules/
 .env.*
 !.env.example
 
+# 微信云托管环境变量导入文件（含真实密钥，切勿提交/上传到代码仓库）
+backend/wxcloud.env.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -31,3 +34,6 @@ frontend/dist/
 frontend/.temp/
 frontend/.swc/
 frontend/.rn_temp/
+
+assets
+app.zip
