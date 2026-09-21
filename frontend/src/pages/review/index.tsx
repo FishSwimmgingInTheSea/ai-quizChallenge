@@ -132,6 +132,9 @@ export default function Review() {
             </View>
           )
         })}
+
+        {/* 底部安全占位盒：保证末尾内容能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

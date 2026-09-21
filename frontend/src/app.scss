@@ -60,10 +60,17 @@ input {
 
 .scr {
   flex: 1;
-  padding: 12px 18px 24px;
+  padding: 12px 18px 0;
   /* scroll-view 默认 width:100% 且为 content-box，加 padding 会横向溢出屏幕；
      显式 border-box 保证总宽不超出（Bug 修复 #2） */
   box-sizing: border-box;
+}
+/* 微信 scroll-view 自身的 padding-bottom 不计入可滚动高度，滚到底时最后一个元素
+   （含按钮 4px 立体投影）会被容器底边裁切；底部留白改由 .scr-safe 占位盒承担 */
+.scr-safe {
+  height: 24px;
+  height: calc(24px + constant(safe-area-inset-bottom));
+  height: calc(24px + env(safe-area-inset-bottom));
 }
 
 /* ---------- 按钮：按压感只留给实底主按钮 ---------- */
@@ -139,7 +146,7 @@ input {
     #FEFDF9;
   border: 1px solid #E3DDCE;
   border-radius: 14px 18px 13px 17px;
-  padding: 16px 16px 12px 42px;
+  padding: 10px 16px 8px 42px;
   box-shadow: var(--shadow-card);
 }
 .paper-card::before {
@@ -157,7 +164,7 @@ input {
   font-size: 14px;
   color: var(--ink);
   line-height: 30px;
-  min-height: 90px;
+  height: 90px;
   background: transparent;
 }
 .paper-card .ph { font-size: 14px; color: #B5AFA3; line-height: 30px; }
@@ -193,7 +200,16 @@ input {
 .badge.b-single { background: var(--blue-soft); color: var(--blue); }
 .badge.b-multi { background: var(--orange-soft); color: var(--orange-dark); }
 .badge.b-judge { background: var(--yellow-soft); color: var(--yellow-deep); }
-.badge.b-point { background: var(--green-soft); color: var(--green-dark); }
+.badge.b-point {
+  background: var(--green-soft);
+  color: var(--green-dark);
+  /* 知识点等长文徽章：继承 nowrap 会单行超出屏宽被裁切，允许换行并限宽 */
+  white-space: normal;
+  word-break: break-all;
+  text-align: left;
+  line-height: 1.5;
+  max-width: 100%;
+}
 .badge.b-xp { background: var(--yellow-soft); color: var(--yellow-deep); }
 .badge.b-streak { background: var(--red-soft); color: var(--red); }
 .diff-stars { font-size: 13px; letter-spacing: 2px; color: #C98F00; font-weight: 700; }

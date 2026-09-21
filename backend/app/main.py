@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.response import fail
-from app.api.v1.routes import auth, health, kb, quiz, report, user
+from app.api.v1.routes import auth, health, kb, meta, quiz, report, user
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
@@ -73,6 +73,7 @@ def create_app() -> FastAPI:
 
     api_prefix = "/api/v1"
     app.include_router(health.router, prefix=api_prefix)
+    app.include_router(meta.router, prefix=api_prefix)
     app.include_router(quiz.router, prefix=api_prefix)
     app.include_router(report.router, prefix=api_prefix)
     app.include_router(auth.router, prefix=api_prefix)

@@ -4,7 +4,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import Icon from '../../components/Icon'
 import Mascot from '../../components/Mascot'
 import { INSPIRATIONS } from '../../constants/inspirations'
-import { getQuizRecords, recordToRecentView } from '../../services/api'
+import { getQuizRecordDetail, getQuizRecords, recordToRecentView } from '../../services/api'
 import { getRecentQuizzes, getTotalXp, RecentQuiz } from '../../services/storage'
 import { useQuizStore } from '../../store/quiz'
 import { useUserStore } from '../../store/user'
@@ -26,6 +26,8 @@ export default function Home() {
   // 生成配图开关（question-images）：仅登录可见/可开
   const generateImages = useQuizStore((s) => s.generateImages)
   const setGenerateImages = useQuizStore((s) => s.setGenerateImages)
+  // 后端配图功能系统级可用（meta/features）：关闭/拉取失败时隐藏入口
+  const imageGenAvailable = useQuizStore((s) => s.imageGenAvailable)
   const isLoggedIn = useUserStore((s) => s.isLoggedIn)
   // XP 徽章：登录态读 user store（服务端权威），匿名读本地（方案 §8.3）
   const serverXp = useUserStore((s) =>
@@ -44,6 +46,23 @@ export default function Home() {
       setLocalXp(getTotalXp())
     }
   })
+
+  // 再战=重做原题：登录态回读该局题目直接开答（不耗 AI/生图配额、秒开）；
+  // 匿名本地记录无服务端 id、或回读失败时，降级为同主题重新生成新题
+  const replay = async (r: RecentQuiz) => {
+    if (r.id != null) {
+      try {
+        const detail = await getQuizRecordDetail(r.id)
+        useQuizStore.getState().replayRecord(detail)
+        Taro.navigateTo({ url: '/pages/quiz/index' })
+        return
+      } catch {
+        // 回读失败不阻塞，降级为重新生成
+      }
+    }
+    resetSession(r.title, 'mixed')
+    Taro.navigateTo({ url: '/pages/generating/index' })
+  }
 
   const go = () => {
     const input = value.trim()
@@ -143,7 +162,7 @@ export default function Home() {
           </View>
         )}
 
-        {isLoggedIn && (
+        {isLoggedIn && imageGenAvailable && (
           <View className="img-sec" onClick={toggleImages}>
             <View className="img-sec-main">
               <Text className="img-sec-title">🖼️ 生成图片</Text>
@@ -212,10 +231,7 @@ export default function Home() {
               <Button
                 className="mini-btn"
                 hoverClass="hover"
-                onClick={() => {
-                  resetSession(r.title, 'mixed')
-                  Taro.navigateTo({ url: '/pages/generating/index' })
-                }}
+                onClick={() => replay(r)}
               >
                 <Icon name="replay" size={11} />
                 再战
@@ -223,6 +239,9 @@ export default function Home() {
             </View>
           ))
         )}
+
+        {/* 底部安全占位盒：保证末尾内容能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

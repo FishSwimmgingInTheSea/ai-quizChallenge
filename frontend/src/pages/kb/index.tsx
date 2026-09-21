@@ -250,6 +250,9 @@ export default function KbPage() {
               : '勾选上方"可出题"文档'}
           </Button>
         )}
+
+        {/* 底部安全占位盒：保证末尾按钮能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

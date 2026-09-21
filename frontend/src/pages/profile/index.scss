@@ -26,6 +26,9 @@
     gap: 14px;
   }
   .hero-info {
+    /* 撑满头像右侧剩余宽度，昵称输入框才能满宽不截断 */
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -71,13 +74,49 @@
 
   // 昵称行内编辑（已登录）
   .hero-name-input {
-    font-weight: 800;
-    font-size: 18px;
-    width: 200px;
+    font-weight: 700;
+    font-size: 16px;
+    /* 满宽避免横向截断；显式 height + line-height 垂直居中，
+       微信 input 高度 auto + 上下 padding 的写法在部分基础库会竖向裁切文字 */
+    width: 100%;
+    height: 40px;
+    line-height: 24px;
+    flex-shrink: 0;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 4px 10px;
+    padding: 0 12px;
+  }
+
+  // 昵称编辑：form 收集行（保存按钮 + 取消），官方推荐 form 收集 nickname
+  .nick-form {
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .nick-ops {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .nick-save {
+    margin: 0;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #fff;
+    background: var(--orange);
+    border-radius: var(--r-chip);
+  }
+  .nick-save::after {
+    border: none;
+  }
+  .nick-cancel {
+    padding: 6px 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
   }
 
   // 未登录：登录引导（方案 §6.5，视觉沿用现有风格）

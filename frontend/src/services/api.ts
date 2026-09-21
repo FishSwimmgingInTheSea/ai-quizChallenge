@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 import { getToken } from './token'
 import {
   AnswerRecord,
+  AppFeatures,
   DifficultyRequest,
   KbDocumentPage,
   KbUploadResult,
@@ -42,6 +43,11 @@ export function submitQuizTask(params: {
 /** 轮询出题进度。 */
 export function getQuizTask(taskId: string): Promise<TaskState> {
   return request({ url: `/quiz/task/${taskId}`, method: 'GET' })
+}
+
+/** 功能标志（公开免登录）：配图等入口按后端系统级有效值显隐；请求失败由调用方兜底为关闭。 */
+export function getFeatures(): Promise<AppFeatures> {
+  return request({ url: '/meta/features' })
 }
 
 /** 同步一次性生成题库（调试用）。 */

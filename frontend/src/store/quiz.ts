@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getFeatures } from '../services/api'
 import {
   AnswerRecord,
   DifficultyRequest,
@@ -32,6 +33,8 @@ export interface QuizState {
 
   // 是否为题目生成配图（question-images）：仅登录有效，随出题请求携带
   generateImages: boolean
+  // 后端配图功能系统级可用（meta/features）：false = 首页隐藏配图开关
+  imageGenAvailable: boolean
 
   // 本局幂等键：结算接口防重复写入（用户系统方案设计 §7.5）
   clientRecordId: string
@@ -71,6 +74,8 @@ export interface QuizState {
   ) => void
   setKbSelection: (docIds: number[], docNames: string[]) => void
   setGenerateImages: (v: boolean) => void
+  /** 拉取后端功能标志；失败兜底为关闭（与后端静默降级基调一致） */
+  fetchFeatures: () => Promise<void>
   setTaskId: (taskId: string) => void
   ingestTask: (state: TaskState) => void
   toggleSelect: (key: string) => void
@@ -80,6 +85,8 @@ export interface QuizState {
   setReport: (r: Report) => void
   /** 历史报告回看：用服务端单局详情水合 store，报告页/海报页即可直接渲染 */
   hydrateRecord: (detail: RecordDetail) => void
+  /** 再战=重做原题：水合历史题目但清空作答/报告与幂等键，作为全新一局重新开答 */
+  replayRecord: (detail: RecordDetail) => void
 }
 
 function judge(question: Question, selected: string[]): boolean {
@@ -95,6 +102,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   kbDocIds: [],
   kbDocNames: [],
   generateImages: false,
+  imageGenAvailable: false,
   clientRecordId: '',
   taskId: '',
   quizId: '',
@@ -148,6 +156,20 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     set({ kbDocIds: docIds, kbDocNames: docNames }),
 
   setGenerateImages: (v) => set({ generateImages: v }),
+
+  fetchFeatures: async () => {
+    try {
+      const f = await getFeatures()
+      // 功能不可用时同步收回已勾选的配图请求，避免“开关隐藏但仍传 generate_images”
+      set(
+        f.image_gen_enabled
+          ? { imageGenAvailable: true }
+          : { imageGenAvailable: false, generateImages: false },
+      )
+    } catch {
+      set({ imageGenAvailable: false, generateImages: false })
+    }
+  },
 
   setTaskId: (taskId) => set({ taskId, status: 'pending' }),
 
@@ -259,5 +281,41 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       streak: 0,
       questionStartTs: 0,
       report: detail.report,
+    }),
+
+  replayRecord: (detail) =>
+    set({
+      userInput: detail.record.title,
+      difficulty: 'mixed',
+      clientRecordId: newClientRecordId(),
+      taskId: '',
+      quizId: '',
+      title: detail.record.title,
+      summary: '',
+      status: 'idle',
+      phase: '',
+      imageNotice: '',
+      generatedCount: detail.record.question_count,
+      total: detail.record.question_count,
+      questions: detail.questions.map((q) => ({
+        id: q.question_id,
+        type: q.type,
+        stem: q.stem,
+        options: q.options,
+        answer: q.answer,
+        explanation: q.explanation,
+        knowledge_point: q.knowledge_point,
+        difficulty: q.difficulty,
+        image_url: q.image_url ?? '',
+      })),
+      currentIndex: 0,
+      selected: [],
+      submitted: false,
+      lastCorrect: false,
+      records: [],
+      xp: 0,
+      streak: 0,
+      questionStartTs: 0,
+      report: null,
     }),
 }))

@@ -189,6 +189,9 @@ export default function Generating() {
             取消并返回首页
           </Text>
         )}
+
+        {/* 底部安全占位盒：保证末尾内容能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

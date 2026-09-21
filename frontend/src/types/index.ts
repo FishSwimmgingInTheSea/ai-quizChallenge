@@ -71,6 +71,12 @@ export interface ApiResponse<T> {
   data: T
 }
 
+/** 后端功能标志（GET /meta/features）：前端按系统级有效值渲染功能入口 */
+export interface AppFeatures {
+  /** 配图功能系统级可用（总开关 + 百炼密钥 + COS 凭据） */
+  image_gen_enabled: boolean
+}
+
 // ---------- 用户系统（用户系统方案设计 §6 / §8） ----------
 
 export interface UserProfile {

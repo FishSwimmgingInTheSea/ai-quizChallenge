@@ -50,6 +50,19 @@ class ImageService:
         self._store = store if store is not None else CosImageStore(self._settings)
         self._usage = usage or UsageService(settings=self._settings)
 
+    def system_available(self) -> bool:
+        """配图系统级可用性（总开关 + 百炼密钥 + COS 凭据），不含登录/配额。
+
+        单一事实源：`plan()` 的任务级门禁与 `GET /meta/features` 暴露给
+        前端的开关标志共用本判定，保证前端入口显隐与后端真实能力一致。
+        """
+        s = self._settings
+        if not s.image_gen_enabled:
+            return False
+        if not s.dashscope_api_key:
+            return False
+        return self._store.is_available
+
     def plan(self, user_id: int | None) -> ImagePlan:
         """任务级门禁：判定本次出题是否尝试配图，并给出降级提示（如有）。"""
         s = self._settings
@@ -58,11 +71,8 @@ class ImageService:
             return ImagePlan(False, "")
         if user_id is None:
             return ImagePlan(False, LOGIN_NOTICE)
-        if not s.dashscope_api_key:
-            logger.info("未配置百炼密钥，跳过配图")
-            return ImagePlan(False, "")
-        if not self._store.is_available:
-            logger.info("未配置 COS 凭据，跳过配图")
+        if not self.system_available():
+            logger.info("未配置百炼密钥或 COS 凭据，跳过配图")
             return ImagePlan(False, "")
         return ImagePlan(True, "")
 

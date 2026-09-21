@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { View, Text, Button, ScrollView, Image, Input } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Image, Input, Form } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import Icon from '../../components/Icon'
 import Mascot from '../../components/Mascot'
@@ -28,8 +28,11 @@ export default function Profile() {
   const setProfile = useUserStore((s) => s.setProfile)
 
   // 昵称行内编辑（已登录，input type="nickname"，方案 §6.4）
+  // 对齐官方示例：不绑定 value（微信昵称填入是原生行为，绑定值会被模拟器/真机
+  // 回写，导致填入的昵称一闪又被旧值打回）；实时值只记 ref，保存以
+  // confirm/blur 事件带回的最终值为准
   const [editing, setEditing] = useState(false)
-  const [draftName, setDraftName] = useState('')
+  const draftRef = useRef('')
   // onConfirm / onBlur 双触发防重入锁
   const saveLockRef = useRef(false)
   const [uploading, setUploading] = useState(false)
@@ -62,25 +65,35 @@ export default function Profile() {
   const goLogin = () => Taro.navigateTo({ url: '/pages/login/index' })
 
   const startEdit = () => {
-    setDraftName(displayName)
+    draftRef.current = ''
     setEditing(true)
   }
 
-  const saveNickname = async () => {
+  const saveNickname = async (evtValue?: string) => {
     if (saveLockRef.current || !editing) return
     saveLockRef.current = true
     setEditing(false)
-    const name = draftName.trim()
+    // 取值优先级：form 提交/键盘 confirm 事件带回的原生当前值 > 输入过程 ref 记录；
+    // 微信昵称填入不派发可靠事件，官方推荐用 form 在提交时刻收集原生值
+    const name = (typeof evtValue === 'string' ? evtValue : draftRef.current).trim()
     try {
-      if (name && name !== profile?.nickname) {
+      if (!name) {
+        Taro.showToast({ title: '没填昵称，未保存', icon: 'none' })
+      } else if (name !== profile?.nickname) {
         const updated = await updateProfile({ nickname: name })
         setProfile(updated)
+        Taro.showToast({ title: '昵称已更新', icon: 'success' })
       }
     } catch (e: any) {
       Taro.showToast({ title: e?.message || '昵称保存失败', icon: 'none' })
     } finally {
       saveLockRef.current = false
     }
+  }
+
+  const cancelEdit = () => {
+    if (saveLockRef.current) return
+    setEditing(false)
   }
 
   // chooseAvatar -> 上传 -> 绑定资料（两步，方案 §6.3）
@@ -178,18 +191,36 @@ export default function Profile() {
               <Mascot type="grad" size={64} floaty />
             )}
             <View className="hero-info">
+              {/* 官方推荐用 form 收集 nickname 输入：提交时刻直接读输入框原生当前值，
+                  不依赖 input/blur 事件是否触发（微信昵称填入不派发可靠事件）；
+                  保存/取消显式按钮，结束编辑不再依赖失焦 */}
               {isLoggedIn && editing ? (
-                <Input
-                  className="hero-name-input"
-                  type="nickname"
-                  value={draftName}
-                  maxlength={16}
-                  focus
-                  placeholder="输入新昵称"
-                  onInput={(e: any) => setDraftName(e.detail.value)}
-                  onConfirm={saveNickname}
-                  onBlur={saveNickname}
-                />
+                <Form
+                  className="nick-form"
+                  onSubmit={(e: any) => saveNickname(e?.detail?.value?.nickname)}
+                >
+                  <Input
+                    className="hero-name-input"
+                    type="nickname"
+                    name="nickname"
+                    maxlength={16}
+                    focus
+                    placeholder="输入新昵称"
+                    onInput={(e: any) => {
+                      // 只记 ref 不 setState，避免编辑期间重渲染回写输入框
+                      draftRef.current = e.detail.value
+                    }}
+                    onConfirm={(e: any) => saveNickname(e?.detail?.value)}
+                  />
+                  <View className="nick-ops">
+                    <Button className="nick-save" hoverClass="none" formType="submit">
+                      保存昵称
+                    </Button>
+                    <Text className="nick-cancel" onClick={cancelEdit}>
+                      取消
+                    </Text>
+                  </View>
+                </Form>
               ) : (
                 <Text
                   className="hero-name"
@@ -328,6 +359,9 @@ export default function Profile() {
             立即登录
           </Button>
         )}
+
+        {/* 底部安全占位盒：保证末尾按钮能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

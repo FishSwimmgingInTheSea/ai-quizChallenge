@@ -39,6 +39,11 @@ export default function ReportPage() {
   const goHome = () => Taro.switchTab({ url: '/pages/index/index' })
   // 题目回顾（question-images）：store 已含本局/历史题目（含配图），直接渲染
   const goReview = () => Taro.navigateTo({ url: '/pages/review/index' })
+  // 换一批新题：同主题重新走 AI 生成链路（与「再战=重做原题」区分）
+  const goNewBatch = () => {
+    useQuizStore.getState().resetSession(title, 'mixed')
+    Taro.navigateTo({ url: '/pages/generating/index' })
+  }
 
   if (!report) {
     return (
@@ -156,7 +161,7 @@ export default function ReportPage() {
               {mastered.map((p, i) => (
                 <View className="pw-chip good" key={i}>
                   <Icon name="check" size={11} />
-                  <Text>{p}</Text>
+                  <Text className="pw-chip-text">{p}</Text>
                 </View>
               ))}
             </View>
@@ -172,7 +177,7 @@ export default function ReportPage() {
               {weak.map((p, i) => (
                 <View className="pw-chip bad" key={i}>
                   <Icon name="cross" size={11} />
-                  <Text>{p}</Text>
+                  <Text className="pw-chip-text">{p}</Text>
                 </View>
               ))}
             </View>
@@ -181,7 +186,7 @@ export default function ReportPage() {
 
         {/* 复盘建议 */}
         {report.advice.length > 0 && (
-          <View className="sum-card">
+          <View className="sum-card advice">
             <View className="sec-head">
               <View className="sec-ic t-yellow">
                 <Icon name="bulb" size={14} />
@@ -221,6 +226,14 @@ export default function ReportPage() {
           <Icon name="book" size={15} />
           回顾题目
         </Button>
+
+        <Button className="btn btn-block btn-ghost review-btn" hoverClass="hover" onClick={goNewBatch}>
+          <Icon name="replay" size={15} />
+          换一批新题
+        </Button>
+
+        {/* 底部安全占位盒：保证末尾按钮能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
     </View>
   )

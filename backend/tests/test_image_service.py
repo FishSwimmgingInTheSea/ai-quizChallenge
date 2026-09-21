@@ -114,6 +114,28 @@ def test_plan_正常启用():
     assert plan.notice == ""
 
 
+# ---------- system_available：系统级门禁（meta/features 接口单一事实源） ----------
+
+
+def test_system_available_全配置为真():
+    assert _service().system_available() is True
+
+
+def test_system_available_任一依赖缺失为假():
+    assert _service(_settings(image_gen_enabled=False)).system_available() is False
+    assert _service(_settings(dashscope_api_key="")).system_available() is False
+    assert _service(store=FakeStore(available=False)).system_available() is False
+
+
+def test_system_available_与plan门禁结论一致():
+    # 登录用户视角下 plan 的启用结论应等于系统级可用性（单一事实源不漂移）
+    for over in ({}, dict(image_gen_enabled=False), dict(dashscope_api_key="")):
+        svc = _service(_settings(**over))
+        assert svc.plan(1).enabled is svc.system_available()
+    svc = _service(store=FakeStore(available=False))
+    assert svc.plan(1).enabled is svc.system_available()
+
+
 # ---------- generate_for_question：单题路径 ----------
 
 

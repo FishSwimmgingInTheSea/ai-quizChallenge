@@ -142,6 +142,9 @@ export default function Poster() {
             </Button>
           </View>
         </View>
+
+        {/* 底部安全占位盒：保证末尾按钮能滚出手势横条遮挡区 */}
+        <View className="scr-safe" />
       </ScrollView>
 
       {/* 离屏 Canvas，仅用于生成保存图片 */}
