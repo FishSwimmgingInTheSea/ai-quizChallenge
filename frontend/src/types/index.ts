@@ -93,6 +93,7 @@ export interface LoginResult {
 export interface UserStats {
   total_count: number
   avg_accuracy: number
+  total_correct: number
   total_xp: number
 }
 

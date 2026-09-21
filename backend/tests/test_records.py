@@ -381,6 +381,7 @@ def test_stats_empty_user(record_client: TestClient, user_id: int):
     assert resp.json()["data"] == {
         "total_count": 0,
         "avg_accuracy": 0,
+        "total_correct": 0,
         "total_xp": 0,
     }
 
@@ -402,6 +403,7 @@ def test_stats_values(record_client: TestClient, user_id: int):
     assert resp.json()["data"] == {
         "total_count": 2,
         "avg_accuracy": 60,  # round((80 + 40) / 2)
+        "total_correct": 6,  # 4 + 2
         "total_xp": 60,
     }
 

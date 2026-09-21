@@ -22,7 +22,11 @@ export default function Profile() {
   const [recent, setRecent] = useState<RecentQuiz[]>([])
   const [localXp, setLocalXp] = useState(0)
   // 登录态下的服务端统计（方案 §8.3：我的-统计）；null = 匿名态按本地现算
-  const [stats, setStats] = useState<{ count: number; avg: number } | null>(null)
+  const [stats, setStats] = useState<{
+    count: number
+    avg: number
+    correct: number
+  } | null>(null)
   const profile = useUserStore((s) => s.profile)
   const isLoggedIn = useUserStore((s) => s.isLoggedIn)
   const setProfile = useUserStore((s) => s.setProfile)
@@ -45,7 +49,13 @@ export default function Profile() {
     if (useUserStore.getState().isLoggedIn) {
       setStats(null)
       getUserStats()
-        .then((s) => setStats({ count: s.total_count, avg: s.avg_accuracy }))
+        .then((s) =>
+          setStats({
+            count: s.total_count,
+            avg: s.avg_accuracy,
+            correct: s.total_correct,
+          }),
+        )
         .catch(() => setStats(null)) // 失败回退本地口径展示
       getQuizRecords({ limit: 20 })
         .then((page) => setRecent(page.records.map(recordToRecentView)))
@@ -116,8 +126,14 @@ export default function Profile() {
     recent.length > 0
       ? Math.round(recent.reduce((s, r) => s + r.accuracy, 0) / recent.length)
       : 0
+  // 匿名态无服务端聚合：按每局 题数×正确率 折算答对数再求和（与 localAvg 同口径回退）
+  const localCorrect = recent.reduce(
+    (s, r) => s + Math.round((r.count * r.accuracy) / 100),
+    0,
+  )
   const totalCount = stats ? stats.count : recent.length
   const avgAccuracy = stats ? stats.avg : localAvg
+  const totalCorrect = stats ? stats.correct : localCorrect
 
   // 点记录卡回看该局复盘报告：匿名引导登录，本地记录无服务端报告
   const openReport = async (r: RecentQuiz) => {
@@ -242,7 +258,7 @@ export default function Profile() {
           )}
         </View>
 
-        {/* 统计：数字为主角，图标与标签同行居中 */}
+        {/* 统计：数字为主角，图标与标签同行居中；XP 已在头部卡徽章展示，此处只放战绩指标 */}
         <View className="stat-row">
           <View className="stat-box">
             <Text className="stat-num">{totalCount}</Text>
@@ -263,12 +279,12 @@ export default function Profile() {
             </View>
           </View>
           <View className="stat-box">
-            <Text className="stat-num">{displayXp}</Text>
+            <Text className="stat-num">{totalCorrect}</Text>
             <View className="stat-label-row">
-              <View className="stat-ic t-yellow">
-                <Icon name="star" size={11} />
+              <View className="stat-ic t-green">
+                <Icon name="check" size={11} />
               </View>
-              <Text className="stat-label">累计经验</Text>
+              <Text className="stat-label">累计答对</Text>
             </View>
           </View>
         </View>

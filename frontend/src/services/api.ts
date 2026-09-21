@@ -147,7 +147,7 @@ export function getQuizRecords(params: {
   })
 }
 
-/** 基础统计：闯关次数 / 平均正确率 / 累计 XP。 */
+/** 基础统计：闯关次数 / 平均正确率 / 累计答对 / 累计 XP。 */
 export function getUserStats(): Promise<UserStats> {
   return request({ url: '/user/stats', method: 'GET' })
 }

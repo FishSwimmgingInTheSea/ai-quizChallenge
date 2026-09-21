@@ -114,4 +114,6 @@ class UserStats(BaseModel):
 
     total_count: int
     avg_accuracy: int
+    # 累计答对题数：SUM(correct_count)，我的页统计第三指标
+    total_correct: int
     total_xp: int

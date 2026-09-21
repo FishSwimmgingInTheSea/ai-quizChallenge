@@ -155,18 +155,24 @@ class RecordService:
         )
 
     def get_stats(self, user_id: int) -> UserStats:
-        """次数 / 平均正确率 / 累计 XP；total_xp 取 users 权威值（§8.2）。"""
+        """次数 / 平均正确率 / 累计答对 / 累计 XP；total_xp 取 users 权威值（§8.2）。"""
         row = (
-            self._db.query(func.count(QuizRecord.id), func.avg(QuizRecord.accuracy))
+            self._db.query(
+                func.count(QuizRecord.id),
+                func.avg(QuizRecord.accuracy),
+                func.sum(QuizRecord.correct_count),
+            )
             .filter(QuizRecord.user_id == user_id)
             .one()
         )
         total_count = int(row[0] or 0)
         avg_accuracy = int(round(row[1])) if row[1] is not None else 0
+        total_correct = int(row[2] or 0)
         user = self._db.get(User, user_id)
         return UserStats(
             total_count=total_count,
             avg_accuracy=avg_accuracy,
+            total_correct=total_correct,
             total_xp=user.total_xp if user else 0,
         )
 
