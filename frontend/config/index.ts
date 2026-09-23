@@ -4,6 +4,15 @@ import prodConfig from './prod'
 
 // 设计稿以 375pt 手机为基准（对齐 prototypes 原型宽度），1px -> 2rpx
 export default defineConfig(async (merge, { command, mode }) => {
+  // 后端 API 基地址：区分环境，允许用 TARO_APP_API 环境变量覆盖
+  // - 开发环境（mode === 'development'）：http://localhost:8000
+  // - 生产环境（其余，如 build --type weapp）：https://你的线上域名
+  const apiBase =
+    process.env.TARO_APP_API ||
+    (mode === 'development'
+      ? 'http://localhost:8000/api/v1'
+      : 'https://ai-quiz-backend-317789-12-1493324885.sh.run.tcloudbase.com/api/v1')
+
   const baseConfig = {
     projectName: 'zhiqu-ai-quiz',
     date: '2026-9-18',
@@ -19,9 +28,7 @@ export default defineConfig(async (merge, { command, mode }) => {
     plugins: [],
     // 微信小程序没有 Node 的 process；必须在编译期注入，否则 process.env.TARO_APP_API 会运行时报错
     defineConstants: {
-      'process.env.TARO_APP_API': JSON.stringify(
-        process.env.TARO_APP_API || 'http://127.0.0.1:8000/api/v1'
-      ),
+      'process.env.TARO_APP_API': JSON.stringify(apiBase),
     },
     copy: {
       patterns: [],

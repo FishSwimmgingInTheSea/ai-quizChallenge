@@ -1,10 +1,12 @@
 /**
  * 后端 API 基地址。
- * - 本地开发：微信开发者工具勾选「不校验合法域名」后可直连 http://127.0.0.1:8000
- * - 正式环境：替换为已备案的 HTTPS 域名
+ * 实际值由 config/index.ts 在编译期按环境注入（defineConstants）：
+ * - 本地开发：http://localhost:8000/api/v1（微信开发者工具需勾选「不校验合法域名」）
+ * - 正式环境：https://你的线上域名/api/v1（已备案的 HTTPS 域名）
+ * 下方默认值仅作为编译期未注入时的兜底。
  */
 export const API_BASE =
-  process.env.TARO_APP_API || 'http://127.0.0.1:8000/api/v1'
+  process.env.TARO_APP_API || 'http://localhost:8000/api/v1'
 
 /** 服务端根地址（API_BASE 去掉 /api/v1），用于拼接 /static 等静态资源路径 */
 export const SERVER_BASE = API_BASE.replace(/\/api\/v1\/?$/, '')

@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "zhiqu-ai-quiz",
   "description": "智趣 AI 闯关学习小程序",
-  "appid": "wx4b6b7994e08c3fcc",
+  "appid": "wx1d5f0c3a37c964c6",
   "setting": {
     "urlCheck": false,
     "es6": false,

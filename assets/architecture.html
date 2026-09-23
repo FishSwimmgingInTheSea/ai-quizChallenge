@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智趣 AI 闯关 · 系统架构图</title>
+<style>
+:root{
+  --canvas:#F4F1EB; --paper:#FBF9F5; --card:#FFFFFF;
+  --ink:#2E2A26; --ink-soft:#8A8478; --ink-faint:#B5AFA3;
+  --line:#E7E2D7; --line-soft:#F0EBDD;
+  --orange:#FF7548; --orange-dark:#EA5A24; --orange-soft:#FFF2EB;
+  --green:#28A461; --green-dark:#1B7A43; --green-soft:#E9F7EF;
+  --red:#E63946; --red-dark:#C42F3B; --red-soft:#FDF0EE;
+  --blue:#2B6CB0; --blue-dark:#21548b; --blue-soft:#EEF4FA;
+  --yellow-soft:#FDF6E3; --yellow-deep:#8A6D00;
+  --gray-soft:#F1EDE3; --gray-deep:#6B665C;
+  --r-card:18px; --r-pill:999px;
+  --shadow-card:0 1px 2px rgba(62,52,40,.05),0 8px 22px rgba(62,52,40,.07);
+  --font:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:var(--font); color:var(--ink);
+  background:
+    radial-gradient(rgba(46,42,38,.045) 1px, transparent 1.4px) 0 0/22px 22px,
+    var(--canvas);
+  width:1500px;
+  padding:40px 44px 46px;
+}
+
+/* ---------- 页头 ---------- */
+.doc-header{
+  position:relative;
+  background:var(--paper); border:1.5px solid var(--line);
+  border-radius:22px; box-shadow:var(--shadow-card);
+  padding:26px 32px 24px; margin-bottom:14px;
+}
+.doc-header h1{font-weight:800;font-size:32px;letter-spacing:1px;}
+.doc-header h1 em{font-style:normal;color:var(--orange);}
+.doc-header .sub{margin-top:8px;font-size:15px;color:var(--ink-soft);font-weight:600;}
+.flow-map{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:7px 5px;}
+.flow-map .step{
+  font-size:13px;font-weight:700;padding:5px 14px;border-radius:var(--r-pill);
+  background:var(--gray-soft);color:var(--gray-deep);white-space:nowrap;
+}
+.flow-map .arr{color:var(--ink-faint);font-weight:800;margin:0 2px;}
+.stamp{
+  position:absolute;top:24px;right:34px;width:100px;height:100px;
+  border:3px double var(--red);border-radius:50%;transform:rotate(-14deg);
+  color:var(--red);display:grid;place-items:center;text-align:center;
+  font-weight:800;font-size:15px;letter-spacing:2px;line-height:1.4;
+  opacity:.82;background:rgba(255,255,255,.55);
+}
+
+/* ---------- 层卡片 ---------- */
+.layer{
+  background:var(--card); border:1.5px solid var(--line);
+  border-radius:var(--r-card); box-shadow:var(--shadow-card);
+  padding:18px 24px 22px;
+}
+.layer-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.layer-tab{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--tab-bg); color:var(--tab-fg);
+  font-weight:800; font-size:19px; letter-spacing:.5px;
+  padding:9px 20px; border-radius:var(--r-pill);
+}
+.layer-tab .ico{font-size:20px;line-height:1;}
+.layer-no{
+  margin-left:auto; font-family:Consolas,monospace; font-weight:700;
+  font-size:14px; color:var(--ink-faint); letter-spacing:2px;
+}
+.layer-sub{font-size:13.5px;color:var(--ink-soft);font-weight:600;}
+
+.items{display:flex;flex-wrap:wrap;gap:12px;}
+.item{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--item-bg); color:var(--item-fg);
+  border-radius:var(--r-pill); padding:11px 19px;
+  font-size:17px; font-weight:600; white-space:nowrap;
+}
+.item .ico{font-size:18px;line-height:1;}
+
+/* 层配色 */
+.l-client{--tab-bg:var(--orange);--tab-fg:#fff;--item-bg:var(--orange-soft);--item-fg:var(--orange-dark);}
+.l-app{--tab-bg:var(--blue);--tab-fg:#fff;--item-bg:var(--blue-soft);--item-fg:var(--blue-dark);}
+.l-biz{--tab-bg:var(--green);--tab-fg:#fff;}
+.l-ext{--tab-bg:var(--red);--tab-fg:#fff;--item-bg:var(--red-soft);--item-fg:var(--red-dark);}
+.l-store{--tab-bg:var(--yellow-deep);--tab-fg:#fff;--item-bg:var(--yellow-soft);--item-fg:var(--yellow-deep);}
+.l-infra{--tab-bg:var(--gray-deep);--tab-fg:#fff;--item-bg:var(--gray-soft);--item-fg:var(--gray-deep);}
+
+/* ---------- 业务层服务卡 ---------- */
+.svc-grid{display:grid;gap:16px;}
+.svc-grid.cols4{grid-template-columns:repeat(4,1fr);}
+.svc-grid.cols3{grid-template-columns:repeat(3,1fr);}
+.svc{
+  background:var(--paper);
+  border:1.5px solid var(--line);
+  border-left:5px solid var(--svc);
+  border-radius:14px; padding:15px 16px 17px;
+}
+.svc h3{
+  display:flex;align-items:center;gap:8px;
+  font-size:18px;font-weight:800;color:var(--svc);
+  padding-bottom:9px;margin-bottom:12px;
+  border-bottom:1px dashed var(--line);
+}
+.svc h3 .ico{font-size:18px;}
+.svc .tags{display:flex;flex-wrap:wrap;gap:8px;}
+.svc .tag{
+  background:var(--svc-soft); color:var(--svc);
+  border-radius:var(--r-pill); padding:7px 13px;
+  font-size:15px; font-weight:600; white-space:nowrap;
+}
+.s-green{--svc:var(--green-dark);--svc-soft:var(--green-soft);}
+.s-blue{--svc:var(--blue);--svc-soft:var(--blue-soft);}
+.s-red{--svc:var(--red-dark);--svc-soft:var(--red-soft);}
+.s-orange{--svc:var(--orange-dark);--svc-soft:var(--orange-soft);}
+.s-purple{--svc:#7C4DBE;--svc-soft:#F3EEFB;}
+
+/* ---------- 连接箭头 ---------- */
+.connector{display:flex;justify-content:center;padding:3px 0;}
+.connector .arrow{
+  width:2px;height:26px;position:relative;
+  background:repeating-linear-gradient(to bottom,var(--ink-faint) 0 5px,transparent 5px 10px);
+}
+.connector .arrow::after{
+  content:'';position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);
+  border-left:6px solid transparent;border-right:6px solid transparent;
+  border-top:8px solid var(--ink-faint);
+}
+
+footer{margin-top:22px;text-align:center;font-size:13px;color:var(--ink-faint);font-weight:600;letter-spacing:.5px;}
+</style>
+</head>
+<body>
+<script>
+window.addEventListener('load',function(){document.title='H='+document.body.scrollHeight;});
+</script>
+
+<!-- 页头 -->
+<header class="doc-header">
+  <h1>智趣 <em>AI</em> 闯关 · 系统架构</h1>
+  <p class="sub">万物皆可闯关 ｜ 一句话输入 → AI 出题 → 闯关答题 → 复盘报告 → 分享海报</p>
+  <div class="flow-map">
+    <span class="step">客户端</span><span class="arr">→</span>
+    <span class="step">应用层</span><span class="arr">→</span>
+    <span class="step">业务层</span><span class="arr">→</span>
+    <span class="step">外部服务</span><span class="arr">/</span>
+    <span class="step">存储层</span><span class="arr">/</span>
+    <span class="step">基础设施层</span>
+  </div>
+  <div class="stamp">万物皆可<br>闯关</div>
+</header>
+
+<!-- 客户端 -->
+<section class="layer l-client">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico">💬</span>客户端</span>
+    <span class="layer-sub">WeChat Mini-Program · Taro 4 + React 18 + TypeScript</span>
+    <span class="layer-no">01</span>
+  </div>
+  <div class="items">
+    <span class="item"><span class="ico">🧭</span>闯关 / 答题 / 报告 / 我的 / 知识库</span>
+    <span class="item"><span class="ico">🔄</span>出题任务轮询</span>
+    <span class="item"><span class="ico">⚖️</span>Zustand 本地判题</span>
+    <span class="item"><span class="ico">🎭</span>小智表情 + 游戏化反馈</span>
+  </div>
+</section>
+
+<div class="connector"><span class="arrow"></span></div>
+
+<!-- 应用层 -->
+<section class="layer l-app">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico">⚡</span>应用层</span>
+    <span class="layer-sub">FastAPI · Pydantic v2 · 统一响应 { code, message, data }</span>
+    <span class="layer-no">02</span>
+  </div>
+  <div class="items">
+    <span class="item"><span class="ico">🔀</span>/api/v1 路由</span>
+    <span class="item"><span class="ico">🔐</span>JWT 鉴权依赖</span>
+    <span class="item"><span class="ico">🧵</span>BackgroundTasks 后台任务</span>
+    <span class="item"><span class="ico">🛡️</span>敏感词校验</span>
+    <span class="item"><span class="ico">🗄️</span>SQLAlchemy 2.0 连接池（PyMySQL）</span>
+  </div>
+</section>
+
+<div class="connector"><span class="arrow"></span></div>
+
+<!-- 业务层 -->
+<section class="layer l-biz">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico">🧩</span>业务层</span>
+    <span class="layer-sub">services / · 七大领域服务</span>
+    <span class="layer-no">03</span>
+  </div>
+  <div class="svc-grid cols4">
+    <div class="svc s-green">
+      <h3><span class="ico">🎯</span>闯关出题服务</h3>
+      <div class="tags">
+        <span class="tag">同步 / 异步出题</span><span class="tag">任务状态机</span>
+        <span class="tag">题型与难度控制</span><span class="tag">题目结构校验</span>
+      </div>
+    </div>
+    <div class="svc s-blue">
+      <h3><span class="ico">🧠</span>AI 编排服务</h3>
+      <div class="tags">
+        <span class="tag">出题 Chain</span><span class="tag">报告 Chain</span>
+        <span class="tag">版本化 Prompt</span><span class="tag">JSON 解析兜底</span>
+      </div>
+    </div>
+    <div class="svc s-red">
+      <h3><span class="ico">🔍</span>检索增强服务</h3>
+      <div class="tags">
+        <span class="tag">Tavily 搜索 Agent</span><span class="tag">Agentic RAG</span>
+        <span class="tag">向量检索</span><span class="tag">截断与降级</span>
+      </div>
+    </div>
+    <div class="svc s-purple">
+      <h3><span class="ico">👤</span>用户服务</h3>
+      <div class="tags">
+        <span class="tag">微信登录换 openid</span><span class="tag">JWT 签发校验</span>
+        <span class="tag">个人中心统计</span><span class="tag">闯关历史</span>
+      </div>
+    </div>
+  </div>
+  <div class="svc-grid cols3" style="margin-top:16px">
+    <div class="svc s-red">
+      <h3><span class="ico">📚</span>知识库服务</h3>
+      <div class="tags">
+        <span class="tag">文档上传校验</span><span class="tag">多格式解析</span>
+        <span class="tag">分块与向量化</span><span class="tag">删除清理</span>
+      </div>
+    </div>
+    <div class="svc s-orange">
+      <h3><span class="ico">🎨</span>AI 配图服务</h3>
+      <div class="tags">
+        <span class="tag">配图 Prompt 构建</span><span class="tag">文生图调用</span>
+        <span class="tag">COS 转存</span><span class="tag">每日额度限制</span>
+      </div>
+    </div>
+    <div class="svc s-green">
+      <h3><span class="ico">📊</span>计分与报告服务</h3>
+      <div class="tags">
+        <span class="tag">服务端复算成绩</span><span class="tag">正确率统计</span>
+        <span class="tag">经验值结算</span><span class="tag">答题记录落库</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="connector"><span class="arrow"></span></div>
+
+<!-- 外部服务 -->
+<section class="layer l-ext">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico"></span>外部服务</span>
+    <span class="layer-sub">第三方能力 · 未配置时自动降级</span>
+    <span class="layer-no">04</span>
+  </div>
+  <div class="items">
+    <span class="item"><span class="ico">🧠</span>DeepSeek API</span>
+    <span class="item"><span class="ico">🔎</span>Tavily 搜索</span>
+    <span class="item"><span class="ico">🧬</span>百炼 Embedding + 文生图</span>
+    <span class="item"><span class="ico">💬</span>微信开放接口</span>
+    <span class="item"><span class="ico">☁️</span>腾讯云 COS</span>
+  </div>
+</section>
+
+<div class="connector"><span class="arrow"></span></div>
+
+<!-- 存储层 -->
+<section class="layer l-store">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico">🗃️</span>存储层</span>
+    <span class="layer-sub">关系数据 + 向量 + 对象存储</span>
+    <span class="layer-no">05</span>
+  </div>
+  <div class="items">
+    <span class="item"><span class="ico">🐬</span>MySQL / SQLite</span>
+    <span class="item"><span class="ico">🧬</span>Chroma 向量库</span>
+    <span class="item"><span class="ico">🖼️</span>对象存储（COS / uploads）</span>
+  </div>
+</section>
+
+<div class="connector"><span class="arrow"></span></div>
+
+<!-- 基础设施层 -->
+<section class="layer l-infra">
+  <div class="layer-head">
+    <span class="layer-tab"><span class="ico">🏗️</span>基础设施层</span>
+    <span class="layer-sub">构建 · 部署 · 版本管理</span>
+    <span class="layer-no">06</span>
+  </div>
+  <div class="items">
+    <span class="item"><span class="ico">🐳</span>Docker</span>
+    <span class="item"><span class="ico">☁️</span>微信云托管</span>
+    <span class="item"><span class="ico">🗄️</span>云数据库</span>
+    <span class="item"><span class="ico">🔧</span>Git</span>
+  </div>
+</section>
+
+<footer>智趣 AI 闯关学习小程序 · 系统架构图 v1.0 ｜ 与 prototypes/ 设计规范同源</footer>
+
+</body>
+</html>
